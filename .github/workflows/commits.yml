@@ -14,13 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          # Recupere tout l'historique de la PR : un clone superficiel ne
-          # contiendrait pas les commits a inspecter.
+          # Recupere tout l'historique : un clone superficiel ne contiendrait
+          # pas les commits a inspecter. On checkout le HEAD reel de la branche
+          # et non le commit de fusion fabrique par GitHub, dont le sujet
+          # ("Merge <sha> into <sha>") echouerait la verification de longueur.
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Aucun trailer de co-auteur
         run: |
-          plage="origin/${{ github.base_ref }}..HEAD"
+          plage="origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}"
           fautifs=$(git log "$plage" --format='%H %s' --grep='co-authored-by' -i || true)
           if [ -n "$fautifs" ]; then
             echo "::error::Des commits portent un trailer de co-auteur :"
@@ -31,7 +34,7 @@ jobs:
 
       - name: Aucune mention d'outil dans les messages
         run: |
-          plage="origin/${{ github.base_ref }}..HEAD"
+          plage="origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}"
           motif='Generated with\|Claude Code\|claude\.ai/code\|noreply@anthropic'
           fautifs=$(git log "$plage" --format='%H %B' | grep -i "$motif" || true)
           if [ -n "$fautifs" ]; then
@@ -43,7 +46,7 @@ jobs:
 
       - name: Sujets d'une seule ligne, longueur raisonnable
         run: |
-          plage="origin/${{ github.base_ref }}..HEAD"
+          plage="origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }}"
           erreur=0
           while IFS= read -r sujet; do
             [ -z "$sujet" ] && continue
