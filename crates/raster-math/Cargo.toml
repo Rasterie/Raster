@@ -1,0 +1,11 @@
+[package]
+name = "raster-math"
+version = "0.0.0"
+description = "2D math for the Raster engine: vectors, rectangles, transforms, curves."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
