@@ -48,10 +48,9 @@ piece that is expensive to retrofit.
 - [x] `rust-toolchain.toml` pinning the toolchain
 - [x] `rustfmt.toml` and `clippy.toml`
 - [x] CI: build, test, clippy with `-D warnings`, fmt check
-- [x] CI: no co-author trailers, no tool mentions, branch naming
 - [x] Release workflow: macOS (Intel + Apple Silicon), Linux, Windows
 - [x] `dev` as the default branch, one branch per change
-- [ ] Branch protection — needs GitHub Team on a private repo; free once public
+- [x] Branch protection on `main` and `dev`
 - [ ] `[?]` Choose the licence — MIT OR Apache-2.0 is the Rust convention
 - [ ] `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` in `docs/`
 - [x] Issue and PR templates
