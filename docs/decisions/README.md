@@ -44,3 +44,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [007](007-no-visual-gameplay-scripting.md) | Graphs for data, text for logic | Accepted |
 | [008](008-external-foundations.md) | Rasterie and Resonance stay independent | Accepted |
 | [009](009-reflection-first.md) | Reflection in Wave 0 | Accepted |
+| [010](010-testing-layout.md) | Per-crate `tests/` plus a conformance crate | Accepted |
