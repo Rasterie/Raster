@@ -24,8 +24,8 @@ the command surface. The goal is not to ship it as *the* way to write games — 
 is to prove the API is genuinely scriptable, and to find everything that is not.
 
 **Phase 3 — a purpose-built language.** Once we know precisely what scripting
-needs to express, design a language for it, the way Godot did with GDScript.
-This is the intended long-term answer.
+needs to express, design a language for it. This is the intended long-term
+answer.
 
 **Phase 4 — C#, only if there is demand.** An adoption decision, not a technical
 one. See below.
@@ -37,8 +37,8 @@ That is exactly backwards.
 
 You cannot expose an API that does not exist. Building bindings against a moving
 engine means exposing functions that get deleted, and doing the work twice.
-Godot's GDScript is good because it was extracted from a working engine, not
-designed ahead of one.
+The scripting languages that work well were extracted from working engines, not
+designed ahead of them.
 
 What *does* need to happen from the first commit is cheaper and more important:
 **design the engine so that scripting is possible later.** Three disciplines,
@@ -91,13 +91,14 @@ Worth stating plainly, because it comes up first and is usually the wrong first
 step.
 
 **What it buys:** a mature language, a large ecosystem, and developers who
-already know it. Godot's C# support is a real adoption driver.
+already know it. Where engines offer it, it is a real adoption driver.
 
 **What it costs:** embedding the .NET runtime is a heavy dependency (100+ MB) on
 something you do not control; marshalling across the boundary is intricate; a
 moving garbage collector next to Rust's ownership model is a genuine source of
-subtle bugs; and debugging across the frontier is painful. Godot has spent years
-on this and it remains among their most fragile areas.
+subtle bugs; and debugging across the frontier is painful. Engines that support
+it have spent years on that integration and it remains among their most fragile
+areas.
 
 For a solo project with no users yet, that cost buys nothing. It becomes worth
 reconsidering only when there are people asking for it — which is Phase 4, and

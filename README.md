@@ -68,24 +68,6 @@ Everything is in [`docs/`](docs/). Start with:
 - [Non-goals](docs/non-goals.md) — what it will not do, and why
 - [Decisions](docs/decisions/) — the reasoning behind the choices
 
-## Why not Godot
-
-Because Godot is genuinely good, this deserves a straight answer rather than a
-strawman. Its 2D renderer is a real 2D pipeline, not a 3D one in disguise, and
-anyone wanting breadth of features should use it.
-
-Raster exists for three specific disagreements:
-
-1. **Entities have no boundary in Godot.** A `Sprite2D` is a peer in the tree,
-   not part of a player. A complex entity becomes six nodes and the logic lives
-   on whichever one holds a script.
-2. **Everything must be a scene.** The `.tscn` file is the source of truth and
-   the code is an attachment to it.
-3. **Every asset is edited the same way.** A shader, a tileset and a sound all
-   go through the same generic inspector.
-
-If those do not bother you, Godot is the better tool today and probably
-tomorrow.
 
 ## Non-goals
 

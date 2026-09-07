@@ -65,7 +65,7 @@ slower here than in an ECS, because their data is not laid out contiguously by
 component. See "Where this model breaks" below for how a Terraria-like avoids
 paying it where it matters.
 
-**Not Godot's node tree.** A `Sprite` is a component, not an entity. It has no
+**Not a node tree.** A `Sprite` is a component, not an entity. It has no
 independent existence, no transform of its own, and cannot be placed in a scene
 by itself. It belongs to its actor.
 

@@ -98,7 +98,7 @@ design identity is one file rather than a thousand call sites.
 **Sprite editor** — the Rasterie pixel art tool, embedded. Parametric
 generation, palettes, OKLCH ramps with hue shifting, and the pixel art rules
 (cluster size, orphan pixels, canonical slopes) enforced as guidance. This is
-the flagship: the reason someone would choose Raster over Godot.
+the flagship, and the clearest expression of what makes Raster distinct.
 
 **Tileset and tilemap** — define tiles from a sprite, set collision and autotile
 rules, then paint. Autotiling with 47-variant bitmasks, because a Terraria-like

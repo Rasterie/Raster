@@ -13,26 +13,27 @@ pixels, and every subsystem is designed around that from the start.
 
 Three complaints, each specific, each with a design consequence.
 
-### 1. The entity has no boundary
+### 1. An entity should have a boundary
 
-In Godot, an entity dissolves into a tree of nodes. A `Sprite2D` is not part of
-a player — it *is* a thing in the scene, with its own transform, able to exist
-alone. A moderately complex entity becomes six nodes, and the logic lives on
-whichever one you attached a script to. Reading the code does not tell you what
-the entity is.
+Engines built on a scene tree dissolve an entity into a collection of nodes. A
+sprite is not *part of* a player — it is a peer in the tree, with its own
+transform, able to exist alone. A moderately complex entity becomes six nodes,
+and its logic lives on whichever one holds a script. Reading the code does not
+tell you what the entity is.
 
-In Unreal, an `Actor` is a class. Its components are declared inside it. One
-file describes one entity.
+Unreal gets this right: an `Actor` is a class, its components are declared
+inside it, and one file describes one entity. That is the model Raster wants,
+applied to 2D.
 
 **Consequence:** Raster uses an actor model. An actor is a Rust type. Its
 components are fields. Its behaviour is its methods. See
 [architecture/actors.md](architecture/actors.md).
 
-### 2. Everything must be a scene
+### 2. Code should be the source of truth
 
-Godot makes the `.tscn` file the source of truth. Code is an attachment to it.
-You cannot understand an entity by opening a file — you must open the editor.
-For someone who works in code, this is backwards, and it makes diffs and version
+When the scene file defines the entity, code becomes an attachment to it. You
+cannot understand an entity by opening a file — you must open the editor. For
+someone who works in code, that is backwards, and it makes diffs and version
 control worse than they need to be.
 
 **Consequence:** in Raster, code is the source of truth. A scene is a list of
@@ -40,12 +41,12 @@ instances and their overridden values, serialised as readable, diffable text. An
 actor type exists whether or not any scene references it. See
 [architecture/assets.md](architecture/assets.md).
 
-### 3. Every asset is edited the same way
+### 3. Each asset deserves its own editor
 
-Godot edits a shader, a tileset and a sound with the same generic property grid.
-Unreal gets this right: a Material opens a graph editor, a Widget Blueprint
-opens a designer with a canvas and a hierarchy, a Sound Cue opens an audio graph.
-Each asset type gets a workspace built for it.
+A generic property grid edits a shader, a tileset and a sound the same way — as
+a table of values. Unreal gets this right: a Material opens a graph editor, a
+Widget Blueprint opens a designer with a canvas and a hierarchy, a Sound Cue
+opens an audio graph. Each asset type gets a workspace built for it.
 
 **Consequence:** in Raster, each asset type has a dedicated editor — but grouped
 into three domains that share their foundations, rather than eight independent
@@ -56,10 +57,10 @@ applications that each reinvent a timeline and an undo stack. See
 
 This is the structural idea that distinguishes Raster from Unreal's approach.
 
-Unreal has many specialised editors, and each is an island. The Material editor,
-the Niagara editor and the Animation editor share a window frame and little
-else. That is affordable at Epic's scale. It is not affordable here, and it is
-not actually better.
+Unreal's specialised editors are each an island. The Material editor, the
+Niagara editor and the Animation editor share a window frame and little else.
+That is affordable at Epic's scale. It is not affordable here, and it is not
+actually better.
 
 Raster groups everything into three domains:
 
@@ -102,8 +103,8 @@ For now: for me, to build 2D games with — a Terraria-like is the reference
 target, because a large persistent tile world with inventory, lighting and
 simulation stresses nearly every subsystem.
 
-Later: open source, for anyone who wants a 2D engine that is actually built for
-2D, with an actor model rather than a scene tree.
+Later: open source, for anyone who wants an engine built for 2D from the ground
+up, with an actor model where an entity is a type in a file.
 
 The repository is private until there is something worth showing. But it is
 written as open source from the first commit — documented decisions, honest

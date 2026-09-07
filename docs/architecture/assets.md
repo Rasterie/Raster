@@ -2,14 +2,14 @@
 
 ## Code is the source of truth
 
-The rule that separates Raster from Godot, stated concretely:
+The rule, stated concretely:
 
 **An actor type is defined by its Rust file. A scene is a list of instances and
 the values they override.**
 
 Deleting every scene in a project loses level layouts. It does not lose what a
-`Player` is. In Godot, deleting the `.tscn` loses the entity itself, because the
-scene *is* the entity.
+`Player` is. Where the scene file *is* the entity definition, deleting it loses
+the entity itself — which is what Raster avoids.
 
 This has a practical consequence that matters daily: scene files stay small,
 readable and diffable, because they contain differences from defaults rather

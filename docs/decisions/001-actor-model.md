@@ -8,24 +8,23 @@
 The engine needs a way to represent entities. Three established models exist in
 the engines that matter, and they produce very different code.
 
-The trigger for this project was dissatisfaction with Godot's node tree.
-Articulated precisely, the complaint is that **an entity has no boundary**: a
-`Sprite2D` is not part of a player, it *is* a thing in the scene with its own
-transform, able to exist alone. A moderately complex entity becomes six nodes,
-and the logic lives on whichever one a script was attached to. Reading the code
-does not tell you what the entity is.
+The trigger for this project is that in a scene-tree engine, **an entity has no
+boundary**: a sprite is not part of a player, it is a peer in the tree with its
+own transform, able to exist alone. A moderately complex entity becomes six
+nodes, and the logic lives on whichever one holds a script. Reading the code does
+not tell you what the entity is.
 
 Unreal's model does not have this problem. `AMyCharacter` is a class: one file,
 its components declared inside it.
 
-It is worth being accurate about the difference, because it is smaller than it
-first appears. Unreal's components also form an attached tree, rooted at a
-`RootComponent`. Structurally that resembles Godot. The real distinctions are:
+It is worth being accurate, because the difference is smaller than it first
+appears — Unreal's components also form an attached tree, rooted at a
+`RootComponent`. The real distinctions are:
 
-1. A component is *attached to* an Actor that remains the identity; a Godot node
-   is a peer in the tree.
+1. A component is *attached to* an Actor that remains the identity, rather than
+   being a peer in a tree.
 2. The script lives on the entity as a class, in one place.
-3. The entity has a name and a file. The Godot entity is diffuse.
+3. The entity has a name and a file, rather than being diffuse.
 
 ## Decision
 
@@ -35,9 +34,9 @@ Parenting exists but is optional.
 
 ## Alternatives
 
-**Godot-style node tree.** Rejected — it is the reason this project exists. It
-also forces every entity into a hierarchy it does not need; most entities in a 2D
-game have no meaningful parent.
+**A scene-tree model.** Rejected — it is the reason this project exists. It also
+forces every entity into a hierarchy it does not need; most entities in a 2D game
+have no meaningful parent.
 
 **ECS (Bevy-style archetypes).** Rejected as the *surface* model, though not
 necessarily as the storage. An ECS is excellent for simulating a hundred thousand
@@ -45,9 +44,9 @@ entities and poor for expressing "a player is this specific thing". Queries and
 systems scatter one entity's behaviour across the codebase, which is the same
 legibility problem as the node tree arriving from the other direction.
 
-**Unity-style dynamic component list.** Rejected — `GetComponent<T>()` returning
-an `Option` you unwrap is a runtime check for something the compiler could know.
-If a `Player` has a `Sprite`, that should be a field.
+**A dynamic component list.** Rejected — a `get_component::<T>()` returning an
+`Option` you unwrap is a runtime check for something the compiler could know. If a
+`Player` has a `Sprite`, that should be a field.
 
 ## Consequences
 

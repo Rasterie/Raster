@@ -36,9 +36,8 @@ problem — a node graph over a dataflow — and share one implementation in
 independent editors means eight timelines and eight undo stacks, which produces
 an inconsistent tool and multiplies the work.
 
-**One generic editor, Godot-style.** Rejected — it is the third complaint that
-motivated the project. A generic property grid edits a shader like a table of
-numbers.
+**One generic editor for everything.** Rejected — it is the third motivation for
+the project. A generic property grid edits a shader like a table of numbers.
 
 ## Consequences
 

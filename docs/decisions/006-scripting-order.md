@@ -6,8 +6,8 @@
 ## Context
 
 Rust is a demanding language for gameplay code, where iteration speed matters
-more than performance. Godot solved this with GDScript, Unity with C#, Unreal
-with Blueprint.
+more than raw performance. Engines solve this with a scripting layer — GDScript,
+C#, Blueprint.
 
 The instinct is to plan the scripting language early, since it shapes the whole
 API. The question is whether to act on that instinct now.
@@ -29,14 +29,15 @@ commit is designing the engine so scripting is possible later.
 **Design the scripting language first.** Rejected, and this is the important
 one. You cannot expose an API that does not exist. Building bindings against a
 moving engine means exposing functions that get deleted and doing the work twice.
-GDScript is good because it was extracted from a working engine, not designed
-ahead of one.
+The scripting languages that work well were extracted from working engines, not
+designed ahead of them.
 
 **C# via .NET hosting, early.** Rejected for now. It buys a mature language and
 existing developers; it costs a 100+ MB runtime dependency, intricate
 marshalling, a moving GC next to Rust's ownership model, and painful
-cross-boundary debugging. Godot has spent years on this and it remains among
-their most fragile areas. For a project with no users, that cost buys nothing.
+cross-boundary debugging. Engines that support it have spent years on that
+integration and it remains among their most fragile areas. For a project with no
+users, that cost buys nothing.
 
 **No scripting, ever.** Rejected — but noted that Rust-side iteration can be
 improved independently with a hot-reloaded game library, which is worth doing in

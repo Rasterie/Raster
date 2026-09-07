@@ -5,20 +5,15 @@
 
 ## Context
 
-The initial motivation was "there is no real 2D engine — they are all 3D engines
-with a 2D mode". That premise is not accurate and should be corrected in the
-record: **Godot's 2D renderer is a genuinely separate pipeline**, with its own
-node types, its own physics and real pixel-perfect support. It is a first-class
-2D engine, and a very good one.
+Most engines treat 2D as a mode within a 3D system. Where that happens, 2D is
+the compromise: the scene graph carries a Z axis nobody uses, the renderer sorts
+in 3D, physics is a 3D solver constrained to a plane, and pixel-perfect rendering
+fights the pipeline.
 
-So "no 2D engine exists" is not the justification. The justification is narrower
-and still holds: engines that support both make 2D the compromise. The scene
-graph carries a Z axis nobody uses, the renderer sorts in 3D, physics is a 3D
-solver constrained to a plane. Even Godot, which does better than most, carries
-generality that a 2D-only engine would not.
+Engines that do 2D well still carry generality a 2D-only engine would not — the
+abstractions have to accommodate both cases.
 
-The question is therefore not whether 2D-only is *possible* but whether it buys
-enough to justify building an engine.
+The question is what a strictly 2D design buys.
 
 ## Decision
 
@@ -30,16 +25,16 @@ Raster is 2D only. Not a reduced 3D engine, not 2.5D, not "2D now, 3D later".
 2D design: as soon as the renderer must handle arbitrary transforms, the sprite
 batcher becomes a general mesh renderer and the pixel-perfect guarantees weaken.
 
-**Build on Godot instead.** Genuinely considered, and the honest answer is that
-it would be faster. A framework layer over Godot could impose the actor model in
-a few months rather than years, and inherit a mature renderer, physics and export
+**A framework layer on top of an existing engine.** Genuinely considered, and
+the honest answer is that it would be faster: the actor model could be imposed in
+a few months rather than years, inheriting a mature renderer, physics and export
 pipeline.
 
 Rejected because the goal is not only the actor model. It is the domain-grouped
-editors with Rasterie and Resonance living inside the engine, and that is not
-something a layer on top of Godot can provide. The decision is also, explicitly,
-a choice to build an engine — which is a legitimate goal in itself as long as it
-is made knowingly.
+editors with Rasterie and Resonance living inside the engine, and a layer on top
+of someone else's editor cannot provide that. The decision is also, explicitly, a
+choice to build an engine — a legitimate goal in itself, as long as it is made
+knowingly.
 
 ## Consequences
 

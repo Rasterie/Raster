@@ -10,8 +10,8 @@ decision in `decisions/`, not as a drift.
 
 Not a reduced 3D engine, not 2.5D, not "2D now, 3D later".
 
-Every engine that supports both makes 2D the compromise: the scene graph carries
-a Z axis nobody uses, the renderer sorts in 3D, the physics is a 3D solver
+An engine that supports both makes 2D the compromise: the scene graph carries a
+Z axis nobody uses, the renderer sorts in 3D, the physics is a 3D solver
 constrained to a plane, and pixel-perfect rendering fights the pipeline.
 
 Being 2D-only is what lets the renderer be a sprite batcher, collision be
@@ -97,11 +97,12 @@ Aseprite and back, no exporting WAVs from a DAW. Generation is a feature of one
 of those tools, not the engine's reason for existing. The developer stays in
 control of the content.
 
-## Being Unity or Godot
+## Matching the established engines feature for feature
 
-Raster will not have their feature breadth. A solo project cannot, and trying
+Raster will not have their breadth. A solo project cannot, and trying
 produces a worse version of everything.
 
 What it can have is a specific, coherent point of view: 2D only, an actor model
 where an entity is a type in a file, and dedicated editors grouped into three
-domains. Someone who wants breadth should use Godot — it is very good.
+domains. Anyone who needs breadth of features is better served by an established
+engine, and should use one.

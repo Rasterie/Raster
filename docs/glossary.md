@@ -1,16 +1,16 @@
 # Glossary
 
-Terms used consistently across these documents. Where a word means something
-different in Unity, Godot or Unreal, that difference is noted — most confusion
-between engines comes from the same word meaning three things.
+Terms used consistently across these documents. Where a word carries a different
+meaning elsewhere, that is noted — most confusion between engines comes from the
+same word meaning three things.
 
 ### Actor
 A Rust type representing one entity in the world. Its components are its fields,
 its behaviour is its methods. The core abstraction of Raster.
 
-*Unreal:* nearly the same. *Godot:* no equivalent — the closest thing is a node
-with a script, which is deliberately not the same. *Unity:* a GameObject, but
-Unity's is a container with a dynamic component list rather than a type.
+Closest relative: Unreal's `AActor`. Note that it is *not* a container with a
+dynamic component list looked up at runtime — an actor's components are known to
+the compiler.
 
 ### ActorId
 A generational index identifying an actor. The only way to reference an actor
@@ -56,9 +56,8 @@ rebuilding.
 A struct providing one capability to an actor, held as a field. Has no
 independent existence and cannot be placed in a scene alone.
 
-*Godot:* a child node, which *can* exist alone — the distinction this design
-turns on. *Unity:* a component in a dynamic list, looked up at runtime rather
-than known to the compiler.
+The distinction this design turns on: a component is not a node that could be
+placed in a scene by itself, and not an entry in a runtime lookup table.
 
 ### Coyote time
 A short window after leaving a ledge during which a jump still registers. Along
@@ -74,7 +73,7 @@ thing scripting will eventually bind to.
 The unit of sound a game plays. Not a file: an assembled behaviour authored as a
 graph — random selection, pitch variation, envelope, bus routing.
 
-*Unreal:* Sound Cue, the direct analogue.
+Modelled on Unreal's Sound Cue.
 
 ### Domain
 One of the three top-level groupings — Game, Visual, Audio. A domain owns its
@@ -126,8 +125,8 @@ and hot reload.
 A list of actor instances and the property values they override, stored as
 readable text. Not a definition of what an entity is — that lives in code.
 
-*Godot:* a `.tscn` *is* the entity definition, which is the design Raster
-rejects.
+Contrast with engines where the scene file *is* the entity definition — the
+design Raster deliberately avoids.
 
 ### Source
 Resonance's central trait: anything producing audio samples, via
