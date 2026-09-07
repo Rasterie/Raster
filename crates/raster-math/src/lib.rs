@@ -18,10 +18,14 @@
   arrondi.
 */
 
+mod angle;
 mod ivec2;
 mod rect;
 mod vec2;
 
+pub use angle::{
+    angle_delta, degrees_to_radians, lerp_angle, radians_to_degrees, rotate_towards, wrap_angle,
+};
 pub use ivec2::IVec2;
 pub use rect::Rect;
 pub use vec2::Vec2;
