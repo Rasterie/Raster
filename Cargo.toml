@@ -1,0 +1,24 @@
+[workspace]
+resolver = "3"
+members = []
+
+# Crates are added as their wave arrives — see docs/roadmap.md.
+# Wave 0 begins with raster-math and raster-core.
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Rasterie/Raster"
+authors = ["Gabin Capelle"]
+
+[workspace.dependencies]
+# Foundations, kept external on purpose — see docs/decisions/008.
+# rasterie-engine = { git = "https://github.com/Rasterie/engine" }
+# resonance-core  = { git = "https://github.com/Rasterie/resonance" }
+
+[profile.dev]
+opt-level = 1          # the engine is unusable at opt-level 0
+
+[profile.dev.package."*"]
+opt-level = 3          # dependencies are compiled once; always optimise them
