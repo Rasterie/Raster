@@ -19,15 +19,17 @@ crate would be simpler than scattering tests across eighteen crates.
 
 ## Decision
 
-Three tiers:
+Two tiers:
 
 1. **`crates/<crate>/tests/`** — integration tests against the public API. The
    bulk of the test suite.
 2. **`#[cfg(test)]` in-file** — reserved for what is private and unreachable from
    outside.
-3. **`crates/raster-conformance/`** — one crate for what genuinely cannot live
-   inside a single crate: architecture rules, cross-domain end-to-end tests, and
-   comparative benchmarks.
+
+Architecture rules — the runtime not depending on the editor, `raster-core`
+depending only on `raster-math` — are enforced in CI by inspecting the dependency
+graph, not by a test crate. A dedicated conformance crate was considered and set
+aside as more machinery than the rule needs.
 
 ## Alternatives
 
@@ -68,18 +70,13 @@ crates/raster-core/
     └── scenes.rs
 ```
 
-**The conformance crate earns its place** by holding the tests that have no
-single owner:
+**Architecture rules move to CI.** Checking that the runtime does not depend on
+the editor is a question about the dependency graph, which `cargo metadata`
+answers directly. A shell step in CI is enough, and it needs no crate.
 
-- The runtime never depends on the editor
-- `raster-core` depends only on `raster-math`
-- Domains do not reach into each other's internals
-- Only `raster-render` and the editor touch GPU or windowing code
-- End-to-end scenarios crossing Game, Visual and Audio
-
-This is the same role played by `tests/e2e/engine-autonomy.test.ts` in
-`rasterie-engine`, where it froze the engine's boundary against regressions —
-a pattern that worked and is worth repeating.
+The precedent is `tests/e2e/engine-autonomy.test.ts` in `rasterie-engine`, which
+froze the engine's boundary against regressions. The rule was worth having; here
+it lives in CI rather than in a test target.
 
 **A discipline that follows:** if something can only be tested from inside the
 crate, that is worth a moment's thought. Sometimes the answer is a legitimate
