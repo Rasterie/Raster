@@ -1,0 +1,3 @@
+# Un moteur manipule beaucoup de petits types Copy ; le seuil par defaut
+# declenche des faux positifs sur Vec2 et consorts.
+trivial-copy-size-limit = 16
