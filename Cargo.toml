@@ -1,9 +1,8 @@
 [workspace]
 resolver = "3"
-members = []
+members = ["crates/raster-math"]
 
-# Crates are added as their wave arrives — see docs/roadmap.md.
-# Wave 0 begins with raster-math and raster-core.
+# Crates are added as their milestone arrives — see TODO.md.
 
 [workspace.package]
 edition = "2024"
