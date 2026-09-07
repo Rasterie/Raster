@@ -51,7 +51,7 @@ piece that is expensive to retrofit.
 - [x] Release workflow: macOS (Intel + Apple Silicon), Linux, Windows
 - [x] `dev` as the default branch, one branch per change
 - [x] Branch protection on `main` and `dev`
-- [ ] `[?]` Choose the licence — MIT OR Apache-2.0 is the Rust convention
+- [x] Licence: MIT
 - [ ] `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` in `docs/`
 - [x] Issue and PR templates
 - [ ] `deny.toml` (`cargo-deny`) for licence and advisory checks
@@ -63,14 +63,14 @@ Boring and stable within a month. No dependencies.
 - [x] `Vec2` — arithmetic, dot, cross, length, normalise, rotate, lerp
 - [x] `Rect` — intersection, containment, union, expansion, corners
 - [x] `IVec2` for tile and pixel coordinates
-- [ ] `Transform2D` — translation, rotation, scale, composition, inverse
-- [ ] `Mat3` for transform composition
-- [ ] `IRect` for integer rectangles
-- [ ] Angle helpers — wrapping, shortest delta, degree/radian conversion
-- [ ] Easing curves — the standard set, plus a custom curve type
-- [ ] Deterministic RNG (PCG or xorshift) — seedable, reproducible
-- [ ] `tests/` covering every operation, including degenerate cases
-- [ ] Property tests where they apply (inverse of inverse is identity, etc.)
+- [x] `Transform2D` — translation, rotation, scale, composition, inverse
+- [x] `Mat3` for transform composition
+- [x] `IRect` for integer rectangles
+- [x] Angle helpers — wrapping, shortest delta, degree/radian conversion
+- [x] Easing curves — the standard set
+- [x] Deterministic RNG (PCG32) — seedable, reproducible, unbiased
+- [x] `tests/` covering every operation, including degenerate cases — 126 tests
+- [ ] A custom curve type, if the built-in easings prove insufficient
 
 ## M0.3 Reflection `[!]`
 
@@ -648,7 +648,7 @@ Collected from throughout. Each blocks work downstream.
 | 1 | Actor storage model | M0.4 | Typed pools — decide by benchmark |
 | 2 | Reflection field access | M0.3 | Generated accessors, no `unsafe` |
 | 3 | Type registry mechanism | M0.3 | Explicit registration |
-| 4 | Licence | M0.1 | MIT OR Apache-2.0 |
+| ~~4~~ | ~~Licence~~ | — | **MIT — decided** |
 | 5 | Which game is the MVP | M3 | Small platformer, not the Terraria-like |
 | 6 | `raster-ui` for the editor | M4 | Try it; `egui` is the fallback |
 | 7 | Scene nesting and overrides | M2.6 | Defer, do not ignore |
