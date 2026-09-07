@@ -1,0 +1,116 @@
+name: Release
+
+# Se declenche sur un tag de version. Tant qu'aucun binaire n'existe (avant M1),
+# le workflow est inerte : rien ne le declenche.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag a publier (ex. v0.1.0)"
+        required: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # Le binaire publie. A ajuster quand l'editeur devient un second artefact.
+  BINARY: raster
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.target }}
+
+      - name: Dependances systeme (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      # Empaquete depuis le dossier de sortie pour que l'archive ne contienne
+      # que le binaire, sans arborescence target/ imbriquee.
+      - name: Empaquete (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          nom="${BINARY}-${{ github.ref_name }}-${{ matrix.target }}"
+          cd target/${{ matrix.target }}/release
+          tar czf "$GITHUB_WORKSPACE/${nom}.tar.gz" "${BINARY}"
+          cd "$GITHUB_WORKSPACE"
+          shasum -a 256 "${nom}.tar.gz" > "${nom}.tar.gz.sha256"
+
+      - name: Empaquete (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $nom = "$env:BINARY-${{ github.ref_name }}-${{ matrix.target }}"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/$env:BINARY.exe" `
+                           -DestinationPath "$nom.zip"
+          (Get-FileHash "$nom.zip" -Algorithm SHA256).Hash.ToLower() +
+            "  $nom.zip" | Out-File "$nom.zip.sha256" -Encoding ascii
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            *.tar.gz
+            *.zip
+            *.sha256
+          if-no-files-found: error
+
+  publish:
+    name: Publie la release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefacts
+          merge-multiple: true
+
+      - name: Cree la release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          files: artefacts/*
+          generate_release_notes: true
+          draft: false
+          # Une version 0.x reste marquee comme preliminaire : l'API casse
+          # frequemment avant la 1.0.
+          prerelease: ${{ startsWith(inputs.tag || github.ref_name, 'v0.') }}
