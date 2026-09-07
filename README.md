@@ -77,5 +77,4 @@ reasoning on each.
 
 ## Licence
 
-Not yet chosen — it will be an OSI-approved open source licence, decided before
-the repository goes public.
+MIT. See [LICENSE](LICENSE).
