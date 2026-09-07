@@ -45,23 +45,28 @@ piece that is expensive to retrofit.
 - [x] `.gitignore`, `.gitattributes`
 - [x] Design documentation in `docs/`
 - [x] `CLAUDE.md` with conventions
-- [ ] `rust-toolchain.toml` pinning the toolchain
-- [ ] `rustfmt.toml` and `clippy.toml`
-- [ ] CI: build, test, clippy with `-D warnings`, fmt check
+- [x] `rust-toolchain.toml` pinning the toolchain
+- [x] `rustfmt.toml` and `clippy.toml`
+- [x] CI: build, test, clippy with `-D warnings`, fmt check
+- [x] CI: no co-author trailers, no tool mentions, branch naming
+- [x] Release workflow: macOS (Intel + Apple Silicon), Linux, Windows
+- [x] `dev` as the default branch, one branch per change
+- [ ] Branch protection — needs GitHub Team on a private repo; free once public
 - [ ] `[?]` Choose the licence — MIT OR Apache-2.0 is the Rust convention
 - [ ] `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` in `docs/`
-- [ ] Issue and PR templates
+- [x] Issue and PR templates
 - [ ] `deny.toml` (`cargo-deny`) for licence and advisory checks
 
 ## M0.2 raster-math
 
 Boring and stable within a month. No dependencies.
 
-- [ ] `Vec2` — arithmetic, dot, cross, length, normalise, rotate, lerp
-- [ ] `Rect` — intersection, containment, union, expansion, corners
+- [x] `Vec2` — arithmetic, dot, cross, length, normalise, rotate, lerp
+- [x] `Rect` — intersection, containment, union, expansion, corners
+- [x] `IVec2` for tile and pixel coordinates
 - [ ] `Transform2D` — translation, rotation, scale, composition, inverse
 - [ ] `Mat3` for transform composition
-- [ ] `IVec2` and `IRect` for tile and pixel coordinates
+- [ ] `IRect` for integer rectangles
 - [ ] Angle helpers — wrapping, shortest delta, degree/radian conversion
 - [ ] Easing curves — the standard set, plus a custom curve type
 - [ ] Deterministic RNG (PCG or xorshift) — seedable, reproducible
