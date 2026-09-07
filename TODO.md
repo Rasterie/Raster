@@ -601,10 +601,9 @@ Structure, per `docs/decisions/010-testing-layout.md`:
 
 - `crates/<crate>/tests/` — integration tests against the public API. The bulk.
 - `#[cfg(test)]` in-file — only for what is private and unreachable from outside.
-- `crates/raster-conformance/` — architecture rules, cross-domain end-to-end
-  tests, benchmarks. The one thing a single test crate is genuinely right for.
 
-- [ ] Architecture conformance tests:
+- [ ] Architecture rules enforced in CI with `cargo-deny` and a dependency
+  check, rather than as a test crate:
   - [ ] The runtime never depends on the editor
   - [ ] `raster-core` depends only on `raster-math`
   - [ ] Domains do not reach into each other

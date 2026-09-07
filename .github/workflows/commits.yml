@@ -1,0 +1,66 @@
+name: Commits
+
+# La protection de branche n'est pas disponible sur un depot prive en plan
+# gratuit. Ce workflow fait respecter par la CI ce qu'elle ferait, plus les
+# regles qu'aucune protection GitHub ne verifie de toute facon.
+on:
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  verifie:
+    name: Verifie les commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Recupere tout l'historique de la PR : un clone superficiel ne
+          # contiendrait pas les commits a inspecter.
+          fetch-depth: 0
+
+      - name: Aucun trailer de co-auteur
+        run: |
+          plage="origin/${{ github.base_ref }}..HEAD"
+          fautifs=$(git log "$plage" --format='%H %s' --grep='co-authored-by' -i || true)
+          if [ -n "$fautifs" ]; then
+            echo "::error::Des commits portent un trailer de co-auteur :"
+            echo "$fautifs"
+            exit 1
+          fi
+          echo "Aucun co-auteur."
+
+      - name: Aucune mention d'outil dans les messages
+        run: |
+          plage="origin/${{ github.base_ref }}..HEAD"
+          motif='Generated with\|Claude Code\|claude\.ai/code\|noreply@anthropic'
+          fautifs=$(git log "$plage" --format='%H %B' | grep -i "$motif" || true)
+          if [ -n "$fautifs" ]; then
+            echo "::error::Des messages de commit mentionnent un outil :"
+            echo "$fautifs"
+            exit 1
+          fi
+          echo "Aucune mention d'outil."
+
+      - name: Sujets d'une seule ligne, longueur raisonnable
+        run: |
+          plage="origin/${{ github.base_ref }}..HEAD"
+          erreur=0
+          while IFS= read -r sujet; do
+            [ -z "$sujet" ] && continue
+            if [ ${#sujet} -gt 72 ]; then
+              echo "::error::Sujet trop long (${#sujet} > 72) : $sujet"
+              erreur=1
+            fi
+          done < <(git log "$plage" --format='%s')
+          exit $erreur
+
+      - name: La branche n'est pas main ou dev
+        run: |
+          branche="${{ github.head_ref }}"
+          case "$branche" in
+            main|dev)
+              echo "::error::Une PR ne part pas de $branche. Cree une branche feat/, fix/ ou docs/."
+              exit 1
+              ;;
+          esac
+          echo "Branche : $branche"
