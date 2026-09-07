@@ -19,6 +19,7 @@
 */
 
 mod angle;
+mod irect;
 mod ivec2;
 mod mat3;
 mod rect;
@@ -28,6 +29,7 @@ mod vec2;
 pub use angle::{
     angle_delta, degrees_to_radians, lerp_angle, radians_to_degrees, rotate_towards, wrap_angle,
 };
+pub use irect::IRect;
 pub use ivec2::IVec2;
 pub use mat3::Mat3;
 pub use rect::Rect;
