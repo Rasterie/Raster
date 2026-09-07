@@ -20,6 +20,7 @@ matches the code is a bug in the document.
 | [architecture/scripting.md](architecture/scripting.md) | How gameplay is written, now and later |
 | [architecture/reflection.md](architecture/reflection.md) | The mechanism the inspector and scripting both need |
 | [roadmap.md](roadmap.md) | The order of work, in waves |
+| [../TODO.md](../TODO.md) | Every task, grouped by milestone |
 | [non-goals.md](non-goals.md) | What Raster will not do, and why |
 | [glossary.md](glossary.md) | Terms used consistently across these documents |
 
