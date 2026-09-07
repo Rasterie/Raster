@@ -24,6 +24,7 @@ mod irect;
 mod ivec2;
 mod mat3;
 mod rect;
+mod rng;
 mod transform;
 mod vec2;
 
@@ -35,5 +36,6 @@ pub use irect::IRect;
 pub use ivec2::IVec2;
 pub use mat3::Mat3;
 pub use rect::Rect;
+pub use rng::Rng;
 pub use transform::Transform2D;
 pub use vec2::Vec2;
