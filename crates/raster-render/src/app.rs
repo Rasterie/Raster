@@ -1,8 +1,11 @@
+use crate::input_bridge::{translate_key, translate_mouse_button};
 use crate::{Gpu, GpuError};
+use raster_input::Input;
+use raster_math::Vec2;
 use std::sync::Arc;
 use winit::application::ApplicationHandler;
 use winit::dpi::LogicalSize;
-use winit::event::WindowEvent;
+use winit::event::{ElementState, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
@@ -36,7 +39,10 @@ pub trait App {
     fn init(&mut self, _gpu: &mut Gpu) {}
 
     /// Called once per frame, before drawing.
-    fn update(&mut self, _dt: f32) {}
+    ///
+    /// `input` already reflects this frame: it is advanced by the engine
+    /// before this runs, so a press registered here is fresh.
+    fn update(&mut self, _input: &mut Input, _dt: f32) {}
 
     /// Called once per frame to draw.
     fn render(&mut self, gpu: &mut Gpu);
@@ -48,6 +54,15 @@ pub trait App {
     /// open — a game can use this to show a "save first?" prompt.
     fn close_requested(&mut self) -> bool {
         true
+    }
+
+    /// Whether the game wants to stop.
+    ///
+    /// Checked after every frame. Distinct from `close_requested`, which asks
+    /// whether the *window* may close: this is the game deciding for itself,
+    /// which is what a pause menu's Quit needs.
+    fn should_exit(&self) -> bool {
+        false
     }
 }
 
@@ -68,6 +83,7 @@ pub fn run<A: App + 'static>(config: WindowConfig, app: A) -> Result<(), RunErro
         app,
         state: None,
         last_frame: std::time::Instant::now(),
+        input: Input::default(),
         error: None,
         window_error: None,
     };
@@ -120,6 +136,7 @@ struct Runner<A: App> {
     app: A,
     state: Option<State>,
     last_frame: std::time::Instant,
+    input: Input,
     /// A startup failure, kept so `run` can report it once the loop exits:
     /// `resumed` has no way to return an error.
     error: Option<GpuError>,
@@ -182,13 +199,69 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 self.app.resized(width, height);
             }
 
+            WindowEvent::KeyboardInput { event, .. } => {
+                // Les repetitions de touche sont ignorees : le systeme les
+                // envoie a sa propre cadence, ce qui ferait qu'une touche
+                // maintenue produirait des pressions repetees dans le jeu.
+                if event.repeat {
+                    return;
+                }
+                if let Some(key) = translate_key(event.physical_key) {
+                    match event.state {
+                        ElementState::Pressed => self.input.key_down(key),
+                        ElementState::Released => self.input.key_up(key),
+                    }
+                }
+            }
+
+            WindowEvent::MouseInput {
+                state: button_state,
+                button,
+                ..
+            } => {
+                if let Some(button) = translate_mouse_button(button) {
+                    match button_state {
+                        ElementState::Pressed => self.input.mouse_down(button),
+                        ElementState::Released => self.input.mouse_up(button),
+                    }
+                }
+            }
+
+            WindowEvent::CursorMoved { position, .. } => {
+                self.input
+                    .set_mouse_position(Vec2::new(position.x as f32, position.y as f32));
+            }
+
+            WindowEvent::MouseWheel { delta, .. } => {
+                let amount = match delta {
+                    MouseScrollDelta::LineDelta(_, y) => y,
+                    // Un defilement par pixels : ramene a une echelle proche
+                    // d'un cran de molette, sans quoi un pave tactile
+                    // produirait des valeurs cent fois plus grandes.
+                    MouseScrollDelta::PixelDelta(p) => p.y as f32 / 50.0,
+                };
+                self.input.add_scroll(amount);
+            }
+
+            WindowEvent::Focused(false) => {
+                // Une touche maintenue pendant un changement de fenetre
+                // resterait enfoncee pour toujours : l'evenement de
+                // relachement part a l'autre fenetre.
+                self.input.release_all();
+            }
+
             WindowEvent::RedrawRequested => {
                 let now = std::time::Instant::now();
                 let dt = now.duration_since(self.last_frame).as_secs_f32();
                 self.last_frame = now;
 
-                self.app.update(dt);
+                self.input.begin_frame(dt);
+                self.app.update(&mut self.input, dt);
                 self.app.render(&mut state.gpu);
+
+                if self.app.should_exit() {
+                    event_loop.exit();
+                }
             }
 
             _ => {}
