@@ -102,8 +102,12 @@ it is in M0 and not M5.
 - [x] Generation allocator with free-list reuse
 - [x] Stale-id resolution returns `None` — with a test that proves it
 - [x] `tests/` — spawn/despawn/reuse, stale ids, clear does not reset generations
-- [ ] Component index: component type → `(ActorId, accessor)` — needed by the
-  renderer, so it arrives with M1.1
+- [ ] `[!]` Component index: component type → `(ActorId, accessor)` — needed by
+  the renderer, so it arrives with M1.1. **Reflection alone is not enough:**
+  discovering which types hold a `Sprite` works today (`ValueKind::Struct`),
+  but reading one back yields a `Value` — an allocated `BTreeMap` per actor per
+  frame. The renderer needs a typed accessor returning `&Sprite`, which the
+  derive macro will have to emit alongside the reflected one.
 - [ ] `on_collide` and `on_message` hooks — they need physics and a message
   queue, so they arrive with M2
 
