@@ -11,6 +11,7 @@ mod app;
 mod batch;
 mod camera;
 mod gpu;
+mod input_bridge;
 mod sprite;
 mod texture;
 

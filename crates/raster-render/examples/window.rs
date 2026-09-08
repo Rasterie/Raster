@@ -22,7 +22,7 @@ impl App for Demo {
         println!("mode de presentation : {:?}", gpu.present_mode());
     }
 
-    fn update(&mut self, dt: f32) {
+    fn update(&mut self, _input: &mut raster_input::Input, dt: f32) {
         self.elapsed += dt;
         self.frames_depuis_mesure += 1;
         self.temps_depuis_mesure += dt;
