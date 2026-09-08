@@ -132,6 +132,33 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
                 ::raster_core::reflect::Value::Struct(fields)
             }
         }
+
+        /*
+          Un type reflechi doit aussi pouvoir servir de champ a un autre : c'est
+          le cas d'un composant dans un acteur. La lecture reutilise to_value,
+          l'ecriture part du Default puis applique — ce qui laisse aux champs
+          absents leur valeur par defaut au lieu d'echouer.
+        */
+        impl ::raster_core::reflect::ReflectValue for #name
+        where
+            Self: ::core::default::Default,
+        {
+            const KIND: ::raster_core::reflect::ValueKind =
+                ::raster_core::reflect::ValueKind::Struct(#name_str);
+
+            fn to_reflect_value(&self) -> ::raster_core::reflect::Value {
+                <Self as ::raster_core::reflect::Reflect>::to_value(self)
+            }
+
+            fn from_reflect_value(
+                value: &::raster_core::reflect::Value,
+            ) -> ::core::result::Result<Self, ::std::string::String> {
+                let mut out = <Self as ::core::default::Default>::default();
+                <Self as ::raster_core::reflect::Reflect>::apply(&mut out, value)
+                    .map_err(|e| e.to_string())?;
+                ::core::result::Result::Ok(out)
+            }
+        }
     })
 }
 
