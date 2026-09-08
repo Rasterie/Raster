@@ -1365,6 +1365,7 @@ version = "0.0.0"
 name = "raster-render"
 version = "0.0.0"
 dependencies = [
+ "bytemuck",
  "pollster",
  "raster-math",
  "wgpu",
