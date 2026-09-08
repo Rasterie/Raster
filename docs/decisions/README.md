@@ -47,3 +47,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [010](010-testing-layout.md) | Per-crate `tests/` plus a conformance crate | Accepted |
 | [011](011-reflection-mechanics.md) | Generated accessors, explicit registration | Accepted |
 | [012](012-readonly-and-renames.md) | Readonly is editor-only; renames are the file name | Accepted |
+| [013](013-actor-storage.md) | Actor storage: typed pools, decided by measurement | Accepted |
