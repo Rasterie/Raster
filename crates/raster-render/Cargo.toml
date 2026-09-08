@@ -1,0 +1,15 @@
+[package]
+name = "raster-render"
+version = "0.0.0"
+description = "The 2D renderer for the Raster engine."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+raster-math = { path = "../raster-math" }
+wgpu = "30"
+winit = "0.30"
+pollster = "1"
