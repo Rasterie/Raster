@@ -6,4 +6,9 @@
 
 #![forbid(unsafe_code)]
 
+pub mod actor;
 pub mod reflect;
+mod world;
+
+pub use actor::{Actor, ActorId, Behaviour};
+pub use world::World;
