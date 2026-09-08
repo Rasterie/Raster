@@ -201,8 +201,9 @@ engines.
 
 ## M1.7 Actor lifecycle
 
-- [ ] `on_spawn`, `tick`, `on_despawn` wired into the loop
-- [ ] `fixed_tick`
+- [x] `fixed_update` and `update` on the `App` trait, driven by the frame loop
+- [ ] `on_spawn`, `tick`, `on_despawn` driven from the loop rather than called
+  by the game — needs `Ctx`, so it lands with the command surface
 - [ ] `Ctx` — the single command surface
 - [ ] Deferred spawn/despawn (no mutation of the world mid-iteration)
 
