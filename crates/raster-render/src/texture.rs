@@ -118,6 +118,25 @@ impl Texture {
         }
     }
 
+    /// Uploads a decoded image.
+    #[must_use]
+    pub fn from_image(gpu: &Gpu, layout: &wgpu::BindGroupLayout, image: &crate::Image) -> Self {
+        Self::from_rgba(gpu, layout, &image.pixels, image.width, image.height)
+    }
+
+    /// Reads a PNG from disk and uploads it.
+    ///
+    /// # Errors
+    ///
+    /// Fails if the file cannot be read or decoded — see [`crate::ImageError`].
+    pub fn load(
+        gpu: &Gpu,
+        layout: &wgpu::BindGroupLayout,
+        path: impl AsRef<std::path::Path>,
+    ) -> Result<Self, crate::ImageError> {
+        Ok(Self::from_image(gpu, layout, &crate::Image::load(path)?))
+    }
+
     /// A magenta-and-black checkerboard, shown where a texture is missing.
     ///
     /// Loud on purpose: a missing asset should be obvious at a glance rather
