@@ -94,19 +94,18 @@ it is in M0 and not M5.
 
 ## M0.4 Core skeleton
 
-- [ ] `ActorId` — generational index, `Debug`, `Hash`, niche-optimised `Option`
-- [ ] `Actor` trait
-- [ ] `Behaviour` trait with all lifecycle hooks defaulted empty
-- [ ] `World` — spawn, despawn, get, get_mut, iter
-- [ ] `[?] [!]` **Storage model — decide by measurement, not argument.**
-  Benchmark all three at 1k / 10k / 50k actors before committing:
-  - A. `Vec<Option<Box<dyn Actor>>>` in a generational arena
-  - B. Per-type typed pools with a type tag in `ActorId` *(current inclination)*
-  - C. Archetype storage behind an actor-shaped API
-- [ ] Generation allocator with free-list reuse
-- [ ] Stale-id resolution returns `None` — with a test that proves it
-- [ ] Component index: component type → `(ActorId, accessor)`
-- [ ] `tests/` — spawn/despawn/reuse, stale ids, generation overflow
+- [x] `ActorId` — generational index, `Debug`, `Hash`, niche-optimised `Option`
+- [x] `Actor` trait
+- [x] `Behaviour` trait with all lifecycle hooks defaulted empty
+- [x] `World` — spawn, despawn, get, get_mut, iter
+- [x] Storage model — typed pools, decided by measurement (decision 013)
+- [x] Generation allocator with free-list reuse
+- [x] Stale-id resolution returns `None` — with a test that proves it
+- [x] `tests/` — spawn/despawn/reuse, stale ids, clear does not reset generations
+- [ ] Component index: component type → `(ActorId, accessor)` — needed by the
+  renderer, so it arrives with M1.1
+- [ ] `on_collide` and `on_message` hooks — they need physics and a message
+  queue, so they arrive with M2
 
 ## M0.5 Window and GPU surface
 
@@ -643,7 +642,7 @@ Collected from throughout. Each blocks work downstream.
 
 | # | Decision | Needed by | Current leaning |
 | --- | --- | --- | --- |
-| 1 | Actor storage model | M0.4 | Typed pools — decide by benchmark |
+| ~~1~~ | ~~Actor storage model~~ | — | **Typed pools — decided by benchmark** |
 | ~~2~~ | ~~Reflection field access~~ | — | **Generated accessors — decided** |
 | ~~3~~ | ~~Type registry mechanism~~ | — | **Explicit registration — decided** |
 | ~~4~~ | ~~Licence~~ | — | **MIT — decided** |
