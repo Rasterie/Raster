@@ -43,6 +43,7 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
     let fields_const = format_ident!("__RASTER_FIELDS_{}", name);
     let info_const = format_ident!("__RASTER_TYPEINFO_{}", name);
+    let has_component_impls = has_component_impls(name, &fields);
     let field_infos = fields.iter().map(field_info);
     let getters = fields.iter().map(getter_arm);
     let setters = fields.iter().map(|f| setter_arm(f, true));
@@ -133,6 +134,8 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
             }
         }
 
+        #(#has_component_impls)*
+
         /*
           Un type reflechi doit aussi pouvoir servir de champ a un autre : c'est
           le cas d'un composant dans un acteur. La lecture reutilise to_value,
@@ -172,6 +175,7 @@ struct ReflectedField {
 struct Attrs {
     skip: bool,
     readonly: bool,
+    component: bool,
     min: Option<f64>,
     max: Option<f64>,
     rename: Option<String>,
@@ -196,6 +200,7 @@ fn parse_attrs(field: &syn::Field) -> syn::Result<Attrs> {
             match key.as_str() {
                 "skip" => attrs.skip = true,
                 "readonly" => attrs.readonly = true,
+                "component" => attrs.component = true,
                 "min" => attrs.min = Some(number(&meta)?),
                 "max" => attrs.max = Some(number(&meta)?),
                 "rename" => attrs.rename = Some(string(&meta)?),
@@ -203,7 +208,7 @@ fn parse_attrs(field: &syn::Field) -> syn::Result<Attrs> {
                 other => {
                     return Err(meta.error(format!(
                         "unknown property attribute `{other}`; expected one of skip, readonly, \
-                         min, max, rename, tooltip"
+                         component, min, max, rename, tooltip"
                     )));
                 }
             }
@@ -282,6 +287,40 @@ fn field_info(field: &ReflectedField) -> TokenStream {
             },
         }
     }
+}
+
+/// Une implementation de `HasComponent<C>` par type de composant, regroupant
+/// tous les champs de ce type.
+///
+/// Un acteur peut porter deux sprites — un coffre et son couvercle — d'ou le
+/// regroupement plutot qu'une implementation par champ, qui serait un conflit
+/// de traits.
+fn has_component_impls(name: &syn::Ident, fields: &[ReflectedField]) -> Vec<TokenStream> {
+    let mut par_type: Vec<(&Type, Vec<&syn::Ident>)> = Vec::new();
+
+    for field in fields.iter().filter(|f| f.attrs.component) {
+        match par_type.iter_mut().find(|(ty, _)| *ty == &field.ty) {
+            Some((_, idents)) => idents.push(&field.ident),
+            None => par_type.push((&field.ty, vec![&field.ident])),
+        }
+    }
+
+    par_type
+        .into_iter()
+        .map(|(ty, idents)| {
+            quote! {
+                impl ::raster_core::actor::HasComponent<#ty> for #name {
+                    fn components(&self) -> impl ::core::iter::Iterator<Item = &#ty> {
+                        [#(&self.#idents),*].into_iter()
+                    }
+
+                    fn components_mut(&mut self) -> impl ::core::iter::Iterator<Item = &mut #ty> {
+                        [#(&mut self.#idents),*].into_iter()
+                    }
+                }
+            }
+        })
+        .collect()
 }
 
 fn option_f64(value: Option<f64>) -> TokenStream {
