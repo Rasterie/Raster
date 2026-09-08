@@ -1358,6 +1358,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "raster-input"
+version = "0.0.0"
+dependencies = [
+ "raster-math",
+]
+
+[[package]]
 name = "raster-math"
 version = "0.0.0"
 
@@ -1367,6 +1374,8 @@ version = "0.0.0"
 dependencies = [
  "bytemuck",
  "pollster",
+ "raster-core",
+ "raster-input",
  "raster-math",
  "wgpu",
  "winit",
