@@ -90,7 +90,7 @@ it is in M0 and not M5.
 - [x] `tests/` — round-trip every supported type, rename survival, error cases
 - [ ] Nested reflected structs (a component inside an actor)
 - [ ] Enums with payloads
-- [ ] Compile error (not silent skip) on a field whose type is not reflectable
+- [x] Compile error (not silent skip) on a field whose type is not reflectable
 
 ## M0.4 Core skeleton
 
