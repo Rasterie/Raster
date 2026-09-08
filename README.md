@@ -3,9 +3,10 @@
 A 2D game engine in Rust, where an entity is a type in a file and every asset
 gets an editor built for it.
 
-> **Status: design phase.** There is no code yet — only the documents in
-> [`docs/`](docs/) that decide what gets built and in what order. The repository
-> is private until there is something worth showing.
+> **Status: early.** The foundations are in — 2D math, reflection, the actor
+> model and world, a window with a GPU surface — and nothing is drawn yet. The
+> [roadmap](docs/roadmap.md) says what comes next; the first milestone that
+> looks like an engine is a sprite moving under keyboard control.
 
 ## What it is
 
@@ -67,6 +68,9 @@ Everything is in [`docs/`](docs/). Start with:
 - [Roadmap](docs/roadmap.md) — the order of work
 - [Non-goals](docs/non-goals.md) — what it will not do, and why
 - [Decisions](docs/decisions/) — the reasoning behind the choices
+
+For contributing, see [CONTRIBUTING.md](docs/CONTRIBUTING.md); for reporting a
+vulnerability, [SECURITY.md](docs/SECURITY.md).
 
 
 ## Non-goals
