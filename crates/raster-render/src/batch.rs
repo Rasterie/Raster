@@ -181,10 +181,43 @@ impl SpriteBatch {
         self.queued.push((texture, sprite));
     }
 
-    /// Draws everything queued, then clears the queue.
+    /// Draws everything queued into the frame's own surface.
+    ///
+    /// Convenience for drawing straight to the window. A game wanting
+    /// pixel-perfect scaling draws into a [`RenderTarget`](crate::RenderTarget)
+    /// with [`SpriteBatch::flush_into`] instead.
+    pub fn flush(&mut self, gpu: &Gpu, frame: &mut Frame, camera: Camera, textures: &[Texture]) {
+        /*
+          La vue et l'encodeur sont deux champs distincts de la frame : les
+          emprunter separement est correct, mais le compilateur ne le voit pas
+          a travers un appel de methode. On decoupe donc l'emprunt ici.
+        */
+        let Frame { view, encoder, .. } = frame;
+        self.flush_parts(gpu, encoder, view, camera, textures);
+    }
+
+    /// Draws everything queued into `view`, then clears the queue.
     ///
     /// Sprites outside the camera's view are dropped before reaching the GPU.
-    pub fn flush(&mut self, gpu: &Gpu, frame: &mut Frame, camera: Camera, textures: &[Texture]) {
+    pub fn flush_into(
+        &mut self,
+        gpu: &Gpu,
+        frame: &mut Frame,
+        view: &wgpu::TextureView,
+        camera: Camera,
+        textures: &[Texture],
+    ) {
+        self.flush_parts(gpu, &mut frame.encoder, view, camera, textures);
+    }
+
+    fn flush_parts(
+        &mut self,
+        gpu: &Gpu,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        camera: Camera,
+        textures: &[Texture],
+    ) {
         self.stats = Stats::default();
 
         if self.queued.is_empty() || textures.is_empty() {
@@ -238,26 +271,24 @@ impl SpriteBatch {
         self.stats.sprites = u32::try_from(self.instances.len()).unwrap_or(u32::MAX);
         self.stats.draw_calls = u32::try_from(runs.len()).unwrap_or(u32::MAX);
 
-        let mut pass = frame
-            .encoder
-            .begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("sprites"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &frame.view,
-                    depth_slice: None,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        // Load : le fond a deja ete efface, et repasser dessus
-                        // effacerait ce que d'autres passes ont dessine.
-                        load: wgpu::LoadOp::Load,
-                        store: wgpu::StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-                multiview_mask: None,
-            });
+        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("sprites"),
+            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                view,
+                depth_slice: None,
+                resolve_target: None,
+                ops: wgpu::Operations {
+                    // Load : le fond a deja ete efface, et repasser dessus
+                    // effacerait ce que d'autres passes ont dessine.
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+            multiview_mask: None,
+        });
 
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.camera_bind_group, &[]);
