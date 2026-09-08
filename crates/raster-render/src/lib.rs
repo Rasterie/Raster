@@ -4,15 +4,20 @@
 //! filtering, and sprites snapped to the pixel grid while the camera
 //! interpolates in sub-pixels. Getting that last pair wrong is what produces
 //! either jitter or blur, and it is the most common failure in 2D engines.
-//!
-//! At this milestone the renderer only opens a window and clears it. Sprite
-//! batching arrives with M1.
 
 #![forbid(unsafe_code)]
 
 mod app;
+mod batch;
+mod camera;
 mod gpu;
+mod sprite;
+mod texture;
 
 pub use app::{App, RunError, WindowConfig, run};
+pub use batch::{SpriteBatch, Stats};
+pub use camera::Camera;
 pub use gpu::{Frame, Gpu, GpuError};
+pub use sprite::{Colour, Layer, SpriteDraw};
+pub use texture::Texture;
 pub use wgpu::Color;
