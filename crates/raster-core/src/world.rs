@@ -1,4 +1,4 @@
-use crate::actor::{Actor, ActorId, Pool};
+use crate::actor::{Actor, ActorId, Component, HasComponent, Pool};
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -34,7 +34,20 @@ struct ErasedPool {
     clear: fn(&mut dyn Any),
     /// Whether an id is still live, without the caller knowing the type.
     contains: fn(&dyn Any, ActorId) -> bool,
+    /*
+      Une fonction d'iteration par type de composant present dans ce type
+      d'acteur. C'est ce qui permet au renderer de parcourir tous les Sprite
+      sans connaitre Player : la fonction est enregistree quand le type est
+      declare, et le rappel evite d'allouer un Vec par frame.
+    */
+    components: HashMap<TypeId, ComponentIter>,
 }
+
+/// Applique `f` a chaque composant du type voulu detenu par un pool.
+///
+/// Le composant est passe en `&dyn Any` faute de pouvoir nommer son type ici ;
+/// l'appelant le retrouve par downcast, qui est resolu statiquement.
+type ComponentIter = fn(&dyn Any, &mut dyn FnMut(ActorId, &dyn Any));
 
 impl World {
     #[must_use]
@@ -173,6 +186,57 @@ impl World {
         }
     }
 
+    /// Declares that actors of type `T` hold components of type `C`.
+    ///
+    /// Registration is explicit for the same reason type registration is — see
+    /// decision 011. Without it, [`World::each_component`] would silently skip
+    /// this actor type, which is worse than a compile-time chore.
+    pub fn register_component<T, C>(&mut self)
+    where
+        T: Actor + HasComponent<C>,
+        C: Component,
+    {
+        let iterate: ComponentIter = |pool, f| {
+            let Some(pool) = pool.downcast_ref::<Pool<T>>() else {
+                return;
+            };
+            for (id, actor) in pool.iter() {
+                for component in actor.components() {
+                    f(id, component);
+                }
+            }
+        };
+
+        // Force la creation du pool : un type declare mais jamais peuple doit
+        // quand meme etre connu, sinon l'enregistrement serait perdu.
+        let _ = self.pool_mut::<T>();
+
+        if let Some(erased) = self.pools.get_mut(&TypeId::of::<T>()) {
+            erased.components.insert(TypeId::of::<C>(), iterate);
+        }
+    }
+
+    /// Applies `f` to every component of type `C` in the world, whatever actor
+    /// holds it.
+    ///
+    /// This is the renderer's path to every `Sprite`. Takes a callback rather
+    /// than returning an iterator: the components live in different pools of
+    /// different types, and collecting them would allocate once per frame.
+    pub fn each_component<C: Component>(&self, mut f: impl FnMut(ActorId, &C)) {
+        let component_id = TypeId::of::<C>();
+
+        for erased in self.pools.values() {
+            let Some(iterate) = erased.components.get(&component_id) else {
+                continue;
+            };
+            iterate(erased.pool.as_ref(), &mut |id, component| {
+                if let Some(component) = component.downcast_ref::<C>() {
+                    f(id, component);
+                }
+            });
+        }
+    }
+
     /// How many actor types have been seen. Mostly of interest to tests.
     #[must_use]
     pub fn type_count(&self) -> usize {
@@ -208,6 +272,7 @@ impl World {
                         p.clear();
                     }
                 },
+                components: HashMap::new(),
             });
         }
 

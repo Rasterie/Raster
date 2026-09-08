@@ -5,10 +5,12 @@
 //! `docs/decisions/013-actor-storage.md` for why they are stored in typed
 //! pools.
 
+mod component;
 mod id;
 mod pool;
 mod traits;
 
+pub use component::{Component, HasComponent};
 pub use id::ActorId;
 pub use traits::{Actor, Behaviour};
 
