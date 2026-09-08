@@ -211,13 +211,14 @@ fn parse_attrs(field: &syn::Field) -> syn::Result<Attrs> {
         })?;
     }
 
-    if let (Some(min), Some(max)) = (attrs.min, attrs.max) {
-        if min > max {
-            return Err(syn::Error::new(
-                field.span(),
-                format!("min ({min}) is greater than max ({max})"),
-            ));
-        }
+    // Les let-chains sont disponibles depuis que la toolchain est en 1.90.
+    if let (Some(min), Some(max)) = (attrs.min, attrs.max)
+        && min > max
+    {
+        return Err(syn::Error::new(
+            field.span(),
+            format!("min ({min}) is greater than max ({max})"),
+        ));
     }
 
     Ok(attrs)

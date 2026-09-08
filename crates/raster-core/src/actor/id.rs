@@ -168,21 +168,17 @@ impl Generations {
         self.free.clear();
 
         for (index, generation) in self.slots.iter_mut().enumerate() {
-            if *generation % 2 == 1 {
-                match generation.checked_add(1) {
-                    Some(next) => {
-                        *generation = next;
-                        self.free.push(
-                            u32::try_from(index).expect("index fits, it came from a u32 slot"),
-                        );
-                    }
-                    // Emplacement epuise : retire de la circulation, comme dans `free`.
-                    None => {}
-                }
-            } else {
-                self.free
-                    .push(u32::try_from(index).expect("index fits, it came from a u32 slot"));
+            let index = u32::try_from(index).expect("the index came from a u32-sized slot list");
+
+            if *generation % 2 == 0 {
+                // Deja libre : il suffit de le remettre dans la liste.
+                self.free.push(index);
+            } else if let Some(next) = generation.checked_add(1) {
+                *generation = next;
+                self.free.push(index);
             }
+            // Sinon l'emplacement est epuise : retire de la circulation, comme
+            // dans `free`.
         }
     }
 }
