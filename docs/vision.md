@@ -106,10 +106,13 @@ simulation stresses nearly every subsystem.
 Later: open source, for anyone who wants an engine built for 2D from the ground
 up, with an actor model where an entity is a type in a file.
 
-The repository is private until there is something worth showing. But it is
-written as open source from the first commit — documented decisions, honest
-non-goals, a public licence, no shortcuts that assume a single user. Retrofitting
-that later never works.
+The repository is public, and has been written as open source from the first
+commit — documented decisions, honest non-goals, a public licence, no shortcuts
+that assume a single user. Retrofitting that later never works.
+
+That does not make it ready for anyone else to use. The API breaks constantly
+and will until 1.0; see [CONTRIBUTING.md](CONTRIBUTING.md) for what that means
+in practice.
 
 ## What success looks like
 
