@@ -88,7 +88,7 @@ it is in M0 and not M5.
 - [x] Type registry: explicit registration — see decision 011
 - [x] Name-to-constructor map for instantiating from a scene file
 - [x] `tests/` — round-trip every supported type, rename survival, error cases
-- [ ] Nested reflected structs (a component inside an actor)
+- [x] Nested reflected structs (a component inside an actor)
 - [ ] Enums with payloads
 - [x] Compile error (not silent skip) on a field whose type is not reflectable
 
