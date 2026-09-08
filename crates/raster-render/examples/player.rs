@@ -12,7 +12,7 @@ use raster_core::reflect::Reflect;
 use raster_input::{Action, Axis, Input};
 use raster_math::{Rect, Vec2};
 use raster_render::{
-    App, Camera, Colour, Gpu, Layer, SpriteBatch, SpriteDraw, Texture, WindowConfig,
+    App, Camera, Colour, Gpu, Layer, RenderTarget, SpriteBatch, SpriteDraw, Texture, WindowConfig,
 };
 
 const LARGEUR: u32 = 320;
@@ -102,6 +102,11 @@ struct Jeu {
     temps: f32,
     world: World,
     batch: Option<SpriteBatch>,
+    /// Le rendu passe par une cible a la resolution du jeu, agrandie ensuite
+    /// d'un facteur entier. Dessiner directement dans la fenetre donnerait des
+    /// pixels de largeurs inegales des que celle-ci n'est pas un multiple
+    /// exact de 320x180.
+    target: Option<RenderTarget>,
     textures: Vec<Texture>,
     camera: Camera,
     joueur: Option<raster_core::ActorId>,
@@ -114,6 +119,7 @@ impl Default for Jeu {
             temps: 0.0,
             world: World::new(),
             batch: None,
+            target: None,
             textures: Vec::new(),
             camera: Camera::new(LARGEUR, HAUTEUR),
             joueur: None,
@@ -132,6 +138,7 @@ impl App for Jeu {
             Texture::from_rgba(gpu, layout, &bonhomme(), 16, 16),
         ];
         self.batch = Some(batch);
+        self.target = Some(RenderTarget::new(gpu, LARGEUR, HAUTEUR));
 
         self.world.register_component::<Player, Sprite>();
         self.world.register_component::<Decor, Sprite>();
@@ -205,19 +212,22 @@ impl App for Jeu {
     }
 
     fn render(&mut self, gpu: &mut Gpu) {
-        let Some(batch) = self.batch.as_mut() else {
+        let (Some(batch), Some(target)) = (self.batch.as_mut(), self.target.as_ref()) else {
             return;
         };
         let Some(mut frame) = gpu.begin_frame() else {
             return;
         };
 
-        frame.clear(raster_render::Color {
-            r: 0.05,
-            g: 0.05,
-            b: 0.09,
-            a: 1.0,
-        });
+        target.clear(
+            &mut frame,
+            raster_render::Color {
+                r: 0.05,
+                g: 0.05,
+                b: 0.09,
+                a: 1.0,
+            },
+        );
 
         // Le decor, puis le joueur par-dessus.
         for (_, decor) in self.world.iter::<Decor>() {
@@ -249,7 +259,11 @@ impl App for Jeu {
             );
         }
 
-        batch.flush(gpu, &mut frame, self.camera, &self.textures);
+        batch.flush_into(gpu, &mut frame, target.view(), self.camera, &self.textures);
+
+        // Agrandit la cible sur la fenetre, d'un facteur entier.
+        let (w, h) = gpu.size();
+        target.present(&mut frame, Vec2::new(w as f32, h as f32));
 
         if self.temps.fract() < 0.017 {
             let s = batch.stats();
@@ -258,13 +272,17 @@ impl App for Jeu {
                 .and_then(|id| self.world.get::<Player>(id))
                 .map_or(Vec2::ZERO, |p| p.position);
             println!(
-                "joueur en ({:.0}, {:.0}), camera en ({:.1}, {:.1}), {} sprites en {} appels",
+                "joueur ({:.0}, {:.0}), camera ({:.1}, {:.1}), {} sprites en {} appels, \
+                 rendu {}x{} agrandi x{}",
                 position.x,
                 position.y,
                 self.camera.position.x,
                 self.camera.position.y,
                 s.sprites,
-                s.draw_calls
+                s.draw_calls,
+                LARGEUR,
+                HAUTEUR,
+                target.scale(Vec2::new(w as f32, h as f32)),
             );
         }
 
