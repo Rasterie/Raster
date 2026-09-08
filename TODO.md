@@ -117,9 +117,8 @@ it is in M0 and not M5.
 - [x] Surface configuration, resize handling, present modes
 - [x] Clear to a colour — the "hello world" of a renderer
 - [x] Graceful failure when no compatible adapter exists
-- [ ] `AutoVsync` does not actually cap the frame rate on macOS when the window
-  is not frontmost — measured at ~140fps. Harmless until the fixed-timestep
-  accumulator lands in M1.6, which is what should pace the loop anyway.
+- [x] `AutoVsync` not capping on macOS is now harmless: the fixed timestep
+  paces the simulation, so a high frame rate only means more frames drawn.
 
 **M0 done when:** a window opens, an actor can be spawned, and its fields can be
 listed and modified by name at runtime.
@@ -192,12 +191,13 @@ engines.
 
 ## M1.6 The frame loop
 
-- [ ] Fixed timestep accumulator
-- [ ] Interpolated rendering between fixed steps
-- [ ] `Time` — delta, raw_delta, elapsed, scale, fixed_delta
-- [ ] `raw_delta` for UI, so menus animate while the game is paused
-- [ ] Spiral-of-death guard (cap the fixed steps per frame)
-- [ ] The documented frame order from `docs/domains/game.md`
+- [x] Fixed timestep accumulator
+- [x] `Time` — delta, raw_delta, elapsed, scale, fixed_delta, alpha
+- [x] `raw_delta` for UI, so menus animate while the game is paused
+- [x] Spiral-of-death guard (cap the fixed steps per frame)
+- [x] The documented frame order: fixed steps, then update, then render
+- [ ] Interpolated rendering — `Time::alpha` is computed but nothing reads it
+  yet; sprites will need a previous position to interpolate from
 
 ## M1.7 Actor lifecycle
 
