@@ -57,13 +57,15 @@ jobs:
           key: ${{ matrix.os }}
 
       # Les dependances systeme du rendu et de l'audio ne sont presentes que
-      # sur les runners graphiques ; Linux est nu par defaut.
+      # sur les runners graphiques ; Linux est nu par defaut. winit a besoin de
+      # X11 en plus de Wayland, les deux dorsales etant compilees.
       - name: Dependances systeme (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev \
+            libx11-dev libxcursor-dev libxrandr-dev libxi-dev libvulkan-dev
 
       - name: Build
         run: cargo build --workspace --all-targets
