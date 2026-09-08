@@ -8,7 +8,9 @@
 
 pub mod actor;
 pub mod reflect;
+mod time;
 mod world;
 
 pub use actor::{Actor, ActorId, Behaviour};
+pub use time::{FrameLoop, Steps, Time};
 pub use world::World;
