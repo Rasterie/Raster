@@ -13,6 +13,7 @@ mod camera;
 mod gpu;
 mod input_bridge;
 mod sprite;
+mod target;
 mod texture;
 
 pub use app::{App, RunError, WindowConfig, run};
@@ -20,5 +21,6 @@ pub use batch::{SpriteBatch, Stats};
 pub use camera::Camera;
 pub use gpu::{Frame, Gpu, GpuError};
 pub use sprite::{Colour, Layer, SpriteDraw};
+pub use target::RenderTarget;
 pub use texture::Texture;
 pub use wgpu::Color;
