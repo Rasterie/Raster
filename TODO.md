@@ -52,9 +52,9 @@ piece that is expensive to retrofit.
 - [x] `dev` as the default branch, one branch per change
 - [x] Branch protection on `main` and `dev`
 - [x] Licence: MIT
-- [ ] `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` in `docs/`
+- [x] `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` in `docs/`
 - [x] Issue and PR templates
-- [ ] `deny.toml` (`cargo-deny`) for licence and advisory checks
+- [x] `deny.toml` (`cargo-deny`) for licence and advisory checks
 
 ## M0.2 raster-math
 
