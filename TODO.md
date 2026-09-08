@@ -179,14 +179,16 @@ engines.
 
 ## M1.5 Input
 
-- [ ] Keyboard and mouse state
-- [ ] Gamepad via `gilrs`
-- [ ] Action mapping — `Action::Jump` rather than a raw key
-- [ ] Axis mapping with dead zones
+- [x] Keyboard and mouse state
+- [x] Action mapping — `Action::JUMP` rather than a raw key
+- [x] Axis mapping, with diagonal normalisation
+- [x] **Input buffering** — a jump pressed just before landing still registers
+- [x] **Coyote time** — `Grace`, a jump just after leaving a ledge still counts
+- [x] Focus loss releases every held key
+- [x] `tests/` for buffering and coyote windows
+- [ ] Gamepad via `gilrs` — the buttons are defined, nothing feeds them yet
+- [ ] Analogue sticks with dead zones
 - [ ] Bindings as an asset, not in code
-- [ ] **Input buffering** — a jump pressed just before landing still registers
-- [ ] **Coyote time** — a jump just after leaving a ledge still registers
-- [ ] `tests/` for buffering and coyote windows
 
 ## M1.6 The frame loop
 
