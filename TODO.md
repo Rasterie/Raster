@@ -77,22 +77,20 @@ Boring and stable within a month. No dependencies.
 Blocks the inspector, scene serialisation, scripting and hot reload. This is why
 it is in M0 and not M5.
 
-- [ ] `[?]` Field access: generated accessors vs raw offsets — leaning accessors
-  (no `unsafe` in the foundation crate, and the perf difference is irrelevant at
-  inspector rates)
-- [ ] `Value` enum — the dynamic currency
-- [ ] `ValueKind` — the type descriptor
-- [ ] `TypeInfo` and `FieldInfo`
-- [ ] `Reflect` trait — `type_info`, `get_field`, `set_field`, `fields`
-- [ ] `#[derive(Reflect)]` proc macro
-- [ ] `#[property(...)]` attributes — skip, min, max, readonly, rename, tooltip
-- [ ] Primitives, engine types, nested structs, enums with payloads, `Vec<T>`,
-  `Option<T>`
+- [x] Field access: generated accessors — no `unsafe`, see decision 011
+- [x] `Value` enum — the dynamic currency
+- [x] `ValueKind` — the type descriptor
+- [x] `TypeInfo` and `FieldInfo`
+- [x] `Reflect` trait — `type_info`, `get_field`, `set_field`, `apply`
+- [x] `#[derive(Reflect)]` proc macro
+- [x] `#[property(...)]` attributes — skip, min, max, readonly, rename, tooltip
+- [x] Primitives, engine types, `Vec<T>`, `Option<T>`
+- [x] Type registry: explicit registration — see decision 011
+- [x] Name-to-constructor map for instantiating from a scene file
+- [x] `tests/` — round-trip every supported type, rename survival, error cases
+- [ ] Nested reflected structs (a component inside an actor)
+- [ ] Enums with payloads
 - [ ] Compile error (not silent skip) on a field whose type is not reflectable
-- [ ] `[?]` Type registry: `inventory`-style linker collection vs explicit
-  registration — explicit is uglier and far more predictable
-- [ ] Name-to-constructor map for instantiating from a scene file
-- [ ] `tests/` — round-trip every supported type, rename survival, error cases
 
 ## M0.4 Core skeleton
 
@@ -646,8 +644,8 @@ Collected from throughout. Each blocks work downstream.
 | # | Decision | Needed by | Current leaning |
 | --- | --- | --- | --- |
 | 1 | Actor storage model | M0.4 | Typed pools — decide by benchmark |
-| 2 | Reflection field access | M0.3 | Generated accessors, no `unsafe` |
-| 3 | Type registry mechanism | M0.3 | Explicit registration |
+| ~~2~~ | ~~Reflection field access~~ | — | **Generated accessors — decided** |
+| ~~3~~ | ~~Type registry mechanism~~ | — | **Explicit registration — decided** |
 | ~~4~~ | ~~Licence~~ | — | **MIT — decided** |
 | 5 | Which game is the MVP | M3 | Small platformer, not the Terraria-like |
 | 6 | `raster-ui` for the editor | M4 | Try it; `egui` is the fallback |
