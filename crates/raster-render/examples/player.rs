@@ -175,7 +175,8 @@ impl App for Jeu {
         println!("Deplacement : ZQSD / WASD / fleches. Espace : courir. Echap : quitter.");
     }
 
-    fn update(&mut self, input: &mut Input, dt: f32) {
+    fn update(&mut self, input: &mut Input, time: &raster_core::Time) {
+        let dt = time.delta;
         self.temps += dt;
 
         if input.pressed(&Action::PAUSE) {

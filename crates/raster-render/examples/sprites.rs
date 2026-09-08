@@ -89,7 +89,8 @@ impl App for Demo {
         );
     }
 
-    fn update(&mut self, _input: &mut raster_input::Input, dt: f32) {
+    fn update(&mut self, _input: &mut raster_input::Input, time: &raster_core::Time) {
+        let dt = time.raw_delta;
         self.temps += dt;
 
         // La camera derive en sous-pixels : c'est ce qui teste le couple
