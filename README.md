@@ -3,10 +3,19 @@
 A 2D game engine in Rust, where an entity is a type in a file and every asset
 gets an editor built for it.
 
-> **Status: early.** The foundations are in — 2D math, reflection, the actor
-> model and world, a window with a GPU surface — and nothing is drawn yet. The
-> [roadmap](docs/roadmap.md) says what comes next; the first milestone that
-> looks like an engine is a sprite moving under keyboard control.
+> **Status: early, and it draws.** A sprite moves under keyboard control,
+> driven by an actor written in Rust:
+>
+> ```sh
+> cargo run -p raster-render --example player
+> ```
+>
+> Under that: 2D math, reflection, the actor model and world, a sprite batcher
+> with a pixel-perfect pipeline, a fixed-timestep loop, and input with buffering
+> and coyote time. No asset loading, no physics, no tilemaps, no editor — the
+> [roadmap](docs/roadmap.md) says what comes next.
+>
+> The API breaks constantly and will until 1.0.
 
 ## What it is
 
