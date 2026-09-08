@@ -109,11 +109,14 @@ it is in M0 and not M5.
 
 ## M0.5 Window and GPU surface
 
-- [ ] `winit` window creation and the event loop
-- [ ] `wgpu` instance, adapter, device, queue
-- [ ] Surface configuration, resize handling, present modes
-- [ ] Clear to a colour — the "hello world" of a renderer
-- [ ] Graceful failure when no compatible adapter exists
+- [x] `winit` window creation and the event loop
+- [x] `wgpu` instance, adapter, device, queue
+- [x] Surface configuration, resize handling, present modes
+- [x] Clear to a colour — the "hello world" of a renderer
+- [x] Graceful failure when no compatible adapter exists
+- [ ] `AutoVsync` does not actually cap the frame rate on macOS when the window
+  is not frontmost — measured at ~140fps. Harmless until the fixed-timestep
+  accumulator lands in M1.6, which is what should pace the loop anyway.
 
 **M0 done when:** a window opens, an actor can be spawned, and its fields can be
 listed and modified by name at runtime.
