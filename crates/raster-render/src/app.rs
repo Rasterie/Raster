@@ -1,5 +1,6 @@
 use crate::input_bridge::{translate_key, translate_mouse_button};
 use crate::{Gpu, GpuError};
+use raster_core::{FrameLoop, Time};
 use raster_input::Input;
 use raster_math::Vec2;
 use std::sync::Arc;
@@ -38,11 +39,21 @@ pub trait App {
     /// Called once, after the GPU is ready.
     fn init(&mut self, _gpu: &mut Gpu) {}
 
+    /// Called at a fixed rate, before [`App::update`].
+    ///
+    /// May run zero, one or several times in a frame — whatever it takes to
+    /// keep the simulation at its fixed rate. Movement and physics belong here:
+    /// a jump height computed from the frame delta would depend on the machine.
+    fn fixed_update(&mut self, _input: &Input, _dt: f32) {}
+
     /// Called once per frame, before drawing.
     ///
     /// `input` already reflects this frame: it is advanced by the engine
     /// before this runs, so a press registered here is fresh.
-    fn update(&mut self, _input: &mut Input, _dt: f32) {}
+    ///
+    /// For anything that should follow the frame rate rather than the fixed
+    /// step — camera smoothing, UI, effects.
+    fn update(&mut self, _input: &mut Input, _time: &Time) {}
 
     /// Called once per frame to draw.
     fn render(&mut self, gpu: &mut Gpu);
@@ -84,6 +95,7 @@ pub fn run<A: App + 'static>(config: WindowConfig, app: A) -> Result<(), RunErro
         state: None,
         last_frame: std::time::Instant::now(),
         input: Input::default(),
+        frame_loop: FrameLoop::default(),
         error: None,
         window_error: None,
     };
@@ -137,6 +149,7 @@ struct Runner<A: App> {
     state: Option<State>,
     last_frame: std::time::Instant,
     input: Input,
+    frame_loop: FrameLoop,
     /// A startup failure, kept so `run` can report it once the loop exits:
     /// `resumed` has no way to return an error.
     error: Option<GpuError>,
@@ -255,8 +268,16 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 let dt = now.duration_since(self.last_frame).as_secs_f32();
                 self.last_frame = now;
 
+                let steps = self.frame_loop.advance(dt);
                 self.input.begin_frame(dt);
-                self.app.update(&mut self.input, dt);
+
+                // Les pas fixes d'abord, puis la mise a jour variable, puis le
+                // dessin : l'ordre documente dans docs/domains/game.md.
+                for fixed_dt in steps {
+                    self.app.fixed_update(&self.input, fixed_dt);
+                }
+
+                self.app.update(&mut self.input, self.frame_loop.time());
                 self.app.render(&mut state.gpu);
 
                 if self.app.should_exit() {
