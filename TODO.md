@@ -132,12 +132,12 @@ The milestone that proves the actor model on real code.
 
 ## M1.1 Renderer core
 
-- [ ] Shader module loading and the render pipeline
-- [ ] Vertex and index buffers, dynamic sizing
-- [ ] Uniform buffers and bind groups
-- [ ] Texture upload, sampler with nearest filtering
-- [ ] Sprite batcher — group by (texture, material, layer)
-- [ ] Draw call submission and a per-frame stats counter
+- [x] Shader module loading and the render pipeline
+- [x] Instance buffer with doubling growth
+- [x] Uniform buffers and bind groups
+- [x] Texture upload, sampler with nearest filtering
+- [x] Sprite batcher — group by (layer, texture)
+- [x] Draw call submission and a per-frame stats counter
 - [ ] Texture atlas: runtime packing, then import-time packing
 
 ## M1.2 Pixel-perfect pipeline `[!]`
@@ -146,28 +146,34 @@ The constraint that defines the renderer. Getting the camera/sprite snapping pai
 wrong produces either jitter or blur, and it is the most common failure in 2D
 engines.
 
-- [ ] Fixed low-resolution render target
-- [ ] Integer upscale to the window
-- [ ] Letterboxing when aspect ratios differ
-- [ ] Nearest-neighbour everywhere by default
-- [ ] Sprite positions snap to the pixel grid
-- [ ] **Camera interpolates in sub-pixels** — this is the half people get wrong
+- [x] Integer upscale computed from the window (`Camera::window_scale`)
+- [x] Letterboxing when aspect ratios differ (`Camera::viewport`)
+- [x] Nearest-neighbour everywhere by default
+- [x] Sprite positions snap to the pixel grid
+- [x] **Camera interpolates in sub-pixels** — this is the half people get wrong
+- [x] Visual test scene that makes jitter and blur obvious at a glance
+- [ ] Fixed low-resolution render target — the camera computes the scale, but
+  the renderer still draws at window resolution. Needs an offscreen target and
+  a blit pass.
 - [ ] Rotation policy: off by default, explicit opt-in
-- [ ] Visual test scene that makes jitter and blur obvious at a glance
 
 ## M1.3 Sprites
 
-- [ ] `Sprite` component — texture, frame, tint, flip, pivot, layer
-- [ ] Layer ordering with within-layer sorting
-- [ ] `Texture` asset type, PNG loading
+- [x] `SpriteDraw` — position, size, source rect, tint, flip, layer
+- [x] Layer ordering, then grouping by texture within a layer
+- [x] `Texture` from RGBA pixels
+- [x] Placeholder texture (magenta checker) for a missing texture
+- [ ] PNG loading
 - [ ] Load a Rasterie-authored sprite from disk
-- [ ] Placeholder texture (magenta checker) for unresolved handles
+- [ ] `Sprite` as an actor component, wired to the component index
 
 ## M1.4 Camera
 
-- [ ] Orthographic 2D camera
-- [ ] Viewport and zoom (integer zoom levels only)
-- [ ] Follow behaviour with smoothing and dead zone
+- [x] Orthographic 2D camera
+- [x] Viewport and zoom (integer zoom levels only)
+- [x] Follow behaviour with smoothing, frame-rate independent
+- [x] Screen-to-world conversion, letterboxing accounted for
+- [ ] Dead zone in the follow behaviour
 - [ ] Bounds clamping
 - [ ] Multiple cameras with per-camera layer masks
 
