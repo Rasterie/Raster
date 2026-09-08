@@ -73,6 +73,16 @@ jobs:
       - name: Tests
         run: cargo test --workspace --all-features
 
+  deny:
+    name: Licences et vulnerabilites
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+
   docs:
     name: Documentation
     needs: lint
