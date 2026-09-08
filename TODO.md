@@ -220,18 +220,17 @@ Enough engine for a real, if small, game.
 
 ## M2.1 Tilemaps
 
-- [ ] Chunked storage — fixed-size chunks of compact arrays
-- [ ] Tile id, and per-tile data (collision, one-way, material)
+- [x] Chunked storage — 32x32 chunks of compact arrays, 2 KB each
+- [x] Tile id in two bytes, with per-kind data in the tileset
+- [x] Rebuild only the affected chunk on edit, neighbours included at borders
+- [x] Culling — `chunks_in` yields only what a view touches
+- [x] Autotile: the 47-variant bitmask, verified to be exactly 47
+- [x] Runtime mutation API (place, break, query, fill, prune)
+- [x] `tests/` — chunk boundaries, negative coordinates, autotile neighbourhoods
+- [ ] Chunk mesh generation and drawing
 - [ ] Multiple layers — background, main, foreground
-- [ ] Chunk mesh generation
-- [ ] Rebuild only the affected chunk on edit
-- [ ] Culling — draw only visible chunks
 - [ ] Streaming — load and evict chunks around the camera
-- [ ] `Tileset` asset — tiles defined from a sprite
-- [ ] Autotile: 47-variant bitmask, computed on edit and cached
-- [ ] Runtime mutation API (place, break, query) — cheap, because a Terraria-like
-  does it constantly
-- [ ] `tests/` — chunk boundaries, autotile neighbourhoods, streaming
+- [ ] `Tileset` as an asset rather than built in code
 
 ## M2.2 Physics
 
