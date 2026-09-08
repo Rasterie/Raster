@@ -151,9 +151,8 @@ engines.
 - [x] Sprite positions snap to the pixel grid
 - [x] **Camera interpolates in sub-pixels** — this is the half people get wrong
 - [x] Visual test scene that makes jitter and blur obvious at a glance
-- [ ] Fixed low-resolution render target — the camera computes the scale, but
-  the renderer still draws at window resolution. Needs an offscreen target and
-  a blit pass.
+- [x] Fixed low-resolution render target — sprites draw into an offscreen
+  image at the game's resolution, scaled up by a whole number with letterboxing
 - [ ] Rotation policy: off by default, explicit opt-in
 
 ## M1.3 Sprites
