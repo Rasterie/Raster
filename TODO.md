@@ -161,8 +161,9 @@ engines.
 - [x] Layer ordering, then grouping by texture within a layer
 - [x] `Texture` from RGBA pixels
 - [x] Placeholder texture (magenta checker) for a missing texture
-- [ ] PNG loading
-- [ ] Load a Rasterie-authored sprite from disk
+- [x] PNG loading — RGBA, RGB, greyscale, 8 and 16 bit
+- [x] Load a sprite from disk, with a placeholder when the file is missing
+- [ ] Load a Rasterie-authored sprite, parameters included
 - [ ] `Sprite` as an actor component, wired to the component index
 
 ## M1.4 Camera

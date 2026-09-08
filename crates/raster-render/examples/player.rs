@@ -64,40 +64,6 @@ fn damier(taille: u32) -> Vec<u8> {
     pixels
 }
 
-/// Un petit personnage, dessine a la main pour n'avoir aucune dependance.
-fn bonhomme() -> Vec<u8> {
-    const MOTIF: [&str; 16] = [
-        "................",
-        ".....######.....",
-        "....########....",
-        "...##..##..##...",
-        "...##..##..##...",
-        "...##########...",
-        "....##....##....",
-        "...############.",
-        "..##.########.##",
-        "..##.########.##",
-        "..##.########.##",
-        ".....########...",
-        "....###....###..",
-        "....###....###..",
-        "....##......##..",
-        "...####....####.",
-    ];
-
-    let mut pixels = Vec::with_capacity(16 * 16 * 4);
-    for ligne in MOTIF {
-        for c in ligne.chars() {
-            if c == '#' {
-                pixels.extend_from_slice(&[240, 230, 210, 255]);
-            } else {
-                pixels.extend_from_slice(&[0, 0, 0, 0]);
-            }
-        }
-    }
-    pixels
-}
-
 struct Jeu {
     temps: f32,
     world: World,
@@ -133,10 +99,25 @@ impl App for Jeu {
         let batch = SpriteBatch::new(gpu);
         let layout = batch.texture_layout();
 
-        self.textures = vec![
-            Texture::from_rgba(gpu, layout, &damier(16), 16, 16),
-            Texture::from_rgba(gpu, layout, &bonhomme(), 16, 16),
-        ];
+        /*
+          Le damier est genere, le heros est charge depuis un PNG : les deux
+          chemins existent, et un jeu reel utilisera surtout le second.
+        */
+        let heros = match Texture::load(
+            gpu,
+            layout,
+            "crates/raster-render/examples/assets/heros.png",
+        ) {
+            Ok(texture) => texture,
+            Err(e) => {
+                // Un asset manquant ne doit pas empecher le jeu de demarrer :
+                // le damier magenta signale le probleme a l'ecran.
+                eprintln!("heros.png introuvable ({e}) — texture de remplacement");
+                Texture::placeholder(gpu, layout)
+            }
+        };
+
+        self.textures = vec![Texture::from_rgba(gpu, layout, &damier(16), 16, 16), heros];
         self.batch = Some(batch);
         self.target = Some(RenderTarget::new(gpu, LARGEUR, HAUTEUR));
 
