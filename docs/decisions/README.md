@@ -51,3 +51,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [014](014-component-index.md) | The component index: a typed path beside reflection | Accepted |
 | [015](015-asset-identity.md) | Asset identity: the path, not a uuid | Accepted |
 | [016](016-hot-reload-polling.md) | Hot reload: polling, not filesystem events | Accepted |
+| [017](017-audio-output.md) | Audio output: cpal directly, Resonance unlinked | Accepted |
