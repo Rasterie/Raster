@@ -351,3 +351,115 @@ fn the_player_never_crosses_a_wall_at_full_speed() {
         "un pas de {pas} px franchit une tuile de {TILE} px"
     );
 }
+
+/// La hauteur qu'un saut atteint, depuis les constantes du jeu.
+fn jump_height() -> f32 {
+    JUMP * JUMP / (2.0 * GRAVITY)
+}
+
+/// La surface la plus proche sous un point : sol ou plateforme.
+fn surface_under(room: &keystone::world::Room, at: Vec2) -> Option<f32> {
+    let column = (at.x / TILE).floor() as i32;
+    let start = (at.y / TILE).floor().max(0.0) as i32;
+
+    (start..room.height() as i32)
+        .find(|&y| room.solid(column, y) || room.platform(column, y))
+        .map(|y| y as f32 * TILE)
+}
+
+#[test]
+fn every_key_and_door_sits_within_reach_of_a_surface() {
+    // Sans cela un objet flotte hors d'atteinte et la salle est infinissable —
+    // ce qu'un test qui teleporte le joueur ne verrait jamais.
+    let mut game = playing();
+
+    for index in 0..game.rooms.len() {
+        game.enter_room(index);
+        let room = game.room().clone();
+
+        for (nom, at) in [("la clef", game.key.unwrap()), ("la porte", game.door)] {
+            let sous = surface_under(&room, at)
+                .unwrap_or_else(|| panic!("`{}` : {nom} n'a aucune surface en dessous", room.name));
+
+            let hauteur = sous - at.y;
+            assert!(
+                hauteur <= jump_height() + TILE,
+                "`{}` : {nom} est a {hauteur:.0} px au-dessus de sa surface, \
+                 pour un saut de {:.0} px",
+                room.name,
+                jump_height()
+            );
+        }
+    }
+}
+
+/// Les surfaces qu'on peut atteindre depuis le depart, de saut en saut.
+///
+/// Un parcours en largeur : la vraie question n'est pas si une plateforme a une
+/// voisine, mais si elle est joignable depuis la ou le joueur commence.
+fn reachable(room: &keystone::world::Room, spawn: Vec2) -> Vec<(i32, i32)> {
+    let saut = jump_height();
+    // On avance aussi en retombant : la portee couvre tout le saut.
+    let portee = SPEED * 2.0 * (2.0 * saut / GRAVITY).sqrt() + TILE;
+
+    let surfaces: Vec<(i32, i32)> = (0..room.height() as i32)
+        .flat_map(|y| (0..room.width() as i32).map(move |x| (x, y)))
+        // Un dessus ou l'on peut se tenir : la tete libre, et de la place pour
+        // le corps. Le flanc d'un mur n'en est pas un, sinon le parcours
+        // grimperait le long des bords sans jamais sauter.
+        .filter(|&(x, y)| {
+            let sol = room.solid(x, y) || room.platform(x, y);
+            let libre = !room.solid(x, y - 1) && !room.solid(x, y - 2);
+            sol && libre
+        })
+        .collect();
+
+    // Le depart : la surface sous le point d'apparition.
+    let colonne = (spawn.x / TILE).floor() as i32;
+    let mut file: Vec<(i32, i32)> = surfaces
+        .iter()
+        .copied()
+        .filter(|&(x, y)| x == colonne && y as f32 * TILE >= spawn.y)
+        .take(1)
+        .collect();
+
+    let mut vus = file.clone();
+    while let Some((x, y)) = file.pop() {
+        for &(sx, sy) in &surfaces {
+            if vus.contains(&(sx, sy)) {
+                continue;
+            }
+            let montee = (y - sy) as f32 * TILE;
+            let ecart = (sx - x).abs() as f32 * TILE;
+
+            // Monter demande un saut ; descendre est toujours possible.
+            let joignable = ecart <= portee && montee <= saut + TILE;
+            if joignable {
+                vus.push((sx, sy));
+                file.push((sx, sy));
+            }
+        }
+    }
+
+    vus
+}
+
+#[test]
+fn every_platform_can_be_reached_from_the_spawn() {
+    for room in keystone::rooms::all() {
+        let atteignables = reachable(&room, room.spawn);
+
+        for y in 0..room.height() as i32 {
+            for x in 0..room.width() as i32 {
+                if !room.platform(x, y) {
+                    continue;
+                }
+                assert!(
+                    atteignables.contains(&(x, y)),
+                    "`{}` : la plateforme en ({x},{y}) est injoignable depuis le depart",
+                    room.name
+                );
+            }
+        }
+    }
+}
