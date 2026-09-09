@@ -227,7 +227,9 @@ Enough engine for a real, if small, game.
 - [x] Autotile: the 47-variant bitmask, verified to be exactly 47
 - [x] Runtime mutation API (place, break, query, fill, prune)
 - [x] `tests/` — chunk boundaries, negative coordinates, autotile neighbourhoods
-- [ ] Chunk mesh generation and drawing
+- [x] Tile drawing — reuses the sprite batcher rather than a cached mesh: a
+  320x180 view holds ~286 tiles, 13 KB of instance data, so a cache would
+  optimise nothing and add invalidation to get wrong
 - [ ] Multiple layers — background, main, foreground
 - [ ] Streaming — load and evict chunks around the camera
 - [ ] `Tileset` as an asset rather than built in code
