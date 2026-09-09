@@ -774,6 +774,7 @@ dependencies = [
  "raster-math",
  "raster-physics",
  "raster-render",
+ "raster-ui",
 ]
 
 [[package]]
@@ -1598,6 +1599,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "raster-editor"
+version = "0.0.0"
+dependencies = [
+ "raster-core",
+ "raster-input",
+ "raster-math",
+ "raster-render",
+ "raster-ui",
+ "toml",
+]
+
+[[package]]
 name = "raster-input"
 version = "0.0.0"
 dependencies = [
@@ -1639,6 +1652,7 @@ dependencies = [
  "raster-core",
  "raster-input",
  "raster-math",
+ "raster-render",
 ]
 
 [[package]]
