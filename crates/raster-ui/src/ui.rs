@@ -12,6 +12,32 @@ pub struct Pointer {
     pub pressed: bool,
     /// Il vient d'etre relache.
     pub released: bool,
+    /// La molette cette frame, positif vers le bas.
+    pub wheel: f32,
+    /// De combien le pointeur a bouge : ce qu'un glissement suit.
+    pub delta: Vec2,
+}
+
+impl Pointer {
+    /// Reads the pointer from the engine's input.
+    ///
+    /// `at` est en pixels du jeu, pas de la fenetre : c'est a l'appelant de
+    /// convertir, car lui seul connait sa camera.
+    #[must_use]
+    pub fn from_input(input: &raster_input::Input, at: Vec2) -> Self {
+        use raster_input::Action;
+
+        Self {
+            at,
+            down: input.held(&Action::ATTACK),
+            pressed: input.pressed(&Action::ATTACK),
+            released: input.released(&Action::ATTACK),
+            // Inverse : winit compte positif vers le haut, un defilement
+            // compte positif vers le bas.
+            wheel: -input.scroll_delta(),
+            delta: input.mouse_delta(),
+        }
+    }
 }
 
 /// What the keyboard did this frame, for navigation.
@@ -50,6 +76,9 @@ pub struct Ui {
     /// Ce qui a ete survole avant, pour ne garder que le dernier — donc le
     /// plus haut dans l'ordre de dessin.
     hover_candidate: Option<Id>,
+    /// Ce qu'un glissement transporte, entre le widget qui le commence et
+    /// celui qui le recoit.
+    dragging: Option<Drag>,
     /// Le texte saisi cette frame, consomme par le champ qui a le focus.
     typed: String,
     /// L'etat textuel que chaque champ garde.
@@ -69,6 +98,7 @@ impl Ui {
             order: Vec::new(),
             memory: HashMap::new(),
             hover_candidate: None,
+            dragging: None,
             typed: String::new(),
             text_memory: HashMap::new(),
         }
@@ -113,6 +143,9 @@ impl Ui {
         // priverait le widget de l'evenement qui conclut son propre clic.
         if self.pointer.released {
             self.captured = None;
+            // Un glissement relache sans preneur est abandonne, sinon il
+            // collerait au curseur pour toujours.
+            self.dragging = None;
         }
 
         if self.keys.next {
@@ -146,6 +179,44 @@ impl Ui {
         };
 
         self.focused = Some(self.order[next]);
+    }
+
+    /// Starts carrying something from a widget.
+    ///
+    /// Un glissement survit a la sortie du widget d'origine : c'est tout
+    /// l'interet, deposer ailleurs.
+    pub fn start_drag(&mut self, from: Id, payload: impl Into<String>) {
+        self.dragging = Some(Drag {
+            from,
+            payload: payload.into(),
+        });
+    }
+
+    /// What is being dragged, if anything.
+    #[must_use]
+    pub fn dragging(&self) -> Option<&Drag> {
+        self.dragging.as_ref()
+    }
+
+    /// Takes what was dropped on `area`, if the pointer released over it.
+    ///
+    /// Ne rend quelque chose qu'une fois : le depot est un evenement, pas un
+    /// etat, et deux receveurs ne doivent pas se le partager.
+    pub fn take_drop(&mut self, area: Rect) -> Option<Drag> {
+        if !self.pointer.released || !area.contains(self.pointer.at) {
+            return None;
+        }
+        self.dragging.take()
+    }
+
+    /// The wheel movement over a widget, zero when it is not hovered.
+    #[must_use]
+    pub fn wheel_over(&self, id: Id) -> f32 {
+        if self.hovered == Some(id) {
+            self.pointer.wheel
+        } else {
+            0.0
+        }
     }
 
     /// Registers a widget and reports what is happening to it.
@@ -249,6 +320,14 @@ impl Ui {
     pub fn count(&self) -> usize {
         self.order.len()
     }
+}
+
+/// Something being carried from one widget to another.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Drag {
+    pub from: Id,
+    /// Ce que le glissement transporte : un chemin d'asset, un nom de type.
+    pub payload: String,
 }
 
 /// What happened to a widget this frame.
