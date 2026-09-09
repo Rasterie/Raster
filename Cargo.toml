@@ -6,6 +6,10 @@ members = [
     "crates/raster-core",
     "crates/raster-render",
     "crates/raster-input",
+    "crates/raster-2d",
+    "crates/raster-physics",
+    "crates/raster-audio",
+    "games/keystone",
 ]
 
 # Crates are added as their milestone arrives — see TODO.md.

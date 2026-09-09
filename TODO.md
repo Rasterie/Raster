@@ -151,9 +151,8 @@ engines.
 - [x] Sprite positions snap to the pixel grid
 - [x] **Camera interpolates in sub-pixels** — this is the half people get wrong
 - [x] Visual test scene that makes jitter and blur obvious at a glance
-- [ ] Fixed low-resolution render target — the camera computes the scale, but
-  the renderer still draws at window resolution. Needs an offscreen target and
-  a blit pass.
+- [x] Fixed low-resolution render target — sprites draw into an offscreen
+  image at the game's resolution, scaled up by a whole number with letterboxing
 - [ ] Rotation policy: off by default, explicit opt-in
 
 ## M1.3 Sprites
@@ -162,8 +161,9 @@ engines.
 - [x] Layer ordering, then grouping by texture within a layer
 - [x] `Texture` from RGBA pixels
 - [x] Placeholder texture (magenta checker) for a missing texture
-- [ ] PNG loading
-- [ ] Load a Rasterie-authored sprite from disk
+- [x] PNG loading — RGBA, RGB, greyscale, 8 and 16 bit
+- [x] Load a sprite from disk, with a placeholder when the file is missing
+- [ ] Load a Rasterie-authored sprite, parameters included
 - [ ] `Sprite` as an actor component, wired to the component index
 
 ## M1.4 Camera
@@ -220,80 +220,88 @@ Enough engine for a real, if small, game.
 
 ## M2.1 Tilemaps
 
-- [ ] Chunked storage — fixed-size chunks of compact arrays
-- [ ] Tile id, and per-tile data (collision, one-way, material)
+- [x] Chunked storage — 32x32 chunks of compact arrays, 2 KB each
+- [x] Tile id in two bytes, with per-kind data in the tileset
+- [x] Rebuild only the affected chunk on edit, neighbours included at borders
+- [x] Culling — `chunks_in` yields only what a view touches
+- [x] Autotile: the 47-variant bitmask, verified to be exactly 47
+- [x] Runtime mutation API (place, break, query, fill, prune)
+- [x] `tests/` — chunk boundaries, negative coordinates, autotile neighbourhoods
+- [x] Tile drawing — reuses the sprite batcher rather than a cached mesh: a
+  320x180 view holds ~286 tiles, 13 KB of instance data, so a cache would
+  optimise nothing and add invalidation to get wrong
 - [ ] Multiple layers — background, main, foreground
-- [ ] Chunk mesh generation
-- [ ] Rebuild only the affected chunk on edit
-- [ ] Culling — draw only visible chunks
 - [ ] Streaming — load and evict chunks around the camera
-- [ ] `Tileset` asset — tiles defined from a sprite
-- [ ] Autotile: 47-variant bitmask, computed on edit and cached
-- [ ] Runtime mutation API (place, break, query) — cheap, because a Terraria-like
-  does it constantly
-- [ ] `tests/` — chunk boundaries, autotile neighbourhoods, streaming
+- [ ] `Tileset` as an asset rather than built in code
 
 ## M2.2 Physics
 
-- [ ] `Body` component — static, kinematic, dynamic
-- [ ] AABB overlap and resolution
-- [ ] **Tile collision** — specialised against the grid, the dominant case
-- [ ] Swept collision so fast projectiles do not tunnel
+- [x] `Body` — an AABB with a velocity
+- [x] AABB overlap and resolution, axis by axis
+- [x] **Tile collision** — specialised against the grid
+- [x] Sub-stepping so fast bodies do not tunnel
+- [x] One-way platforms, with drop-through
+- [x] `Contacts` — grounded, on-wall, per-side
+- [x] `tests/` — tunnelling, one-way edges, narrow corridors, no sinking
 - [ ] Slopes
-- [ ] One-way platforms
 - [ ] Layers and masks
 - [ ] Triggers (overlap without response)
-- [ ] Queries — raycast, shape cast, overlap
-- [ ] `on_collide` dispatch
-- [ ] `tests/` — tunnelling, corner cases, slope transitions, one-way edges
+- [ ] Queries — raycast, shape cast
+- [ ] `on_collide` dispatch — needs `Ctx`
 
 ## M2.3 Animation
 
-- [ ] `Animation` asset — frames with per-frame duration
-- [ ] `Animator` component — play, loop, speed, stop
-- [ ] **Events on frames** — a footstep on frame 3, a hitbox on frame 5
-- [ ] State machine — states, transitions, conditions
+- [x] `Animation` — frames with per-frame duration, loop / once / ping-pong
+- [x] `Animator` — play, speed, restart, catches up on a long step
+- [x] **Events on frames** — a footstep on frame 3, a hitbox on frame 5
+- [x] State machine — states, transitions, conditions, deferred transitions
 - [ ] Crossfade between states
 - [ ] Property animation over reflected fields, using curves
+- [ ] `Animation` as an asset rather than built in code
 
 ## M2.4 Audio
 
-- [ ] `raster-audio` crate wrapping `resonance-core`
-- [ ] Audio thread, lock-free command queue
-- [ ] **No allocation, no locks, no I/O on the audio thread** — an underrun is an
+- [x] `raster-audio` crate — mix, voices, buses (Resonance stays the synthesis side)
+- [x] Audio thread, lock-free ring buffer (decision 017)
+- [x] **No allocation, no locks, no I/O on the audio thread** — an underrun is an
   audible click
 - [ ] `Cue` asset (runtime side; the graph editor is M7)
-- [ ] Voice management and a stealing policy when voices run out
-- [ ] Buses — Master, Music, SFX, UI, Ambience
-- [ ] Volume, ducking, snapshots
-- [ ] 2D spatialisation — distance attenuation, stereo pan, low-pass by distance
+- [x] Voice management and a stealing policy when voices run out
+- [x] Buses — Master, Music, SFX, UI, Ambience
+- [x] Volume per bus and master
+- [ ] Ducking, snapshots
+- [x] 2D spatialisation — distance attenuation, stereo pan
+- [ ] Low-pass by distance
 - [ ] Listener attached to an actor
-- [ ] WAV and OGG loading
+- [x] WAV loading
+- [ ] OGG loading
 - [ ] `[?]` Per-sample vs per-block evaluation — per-block is far more efficient
-- [ ] `tests/` — headless, no device required
+- [x] `tests/` — headless, no device required
 
 ## M2.5 Assets
 
-- [ ] `AssetId<T>` — typed, uuid-backed
-- [ ] `.meta` sidecar files
-- [ ] Project manifest, uuid → path
-- [ ] `Handle<T>` — reference counted, placeholder while loading
+- [x] `AssetId` — the path is the identity (decision 015)
+- [ ] `.meta` sidecar files — not needed until an asset carries import settings
+- [x] `Project` — the root assets are named relative to, found by its marker
+- [x] `AssetStore<T>` / `Handle<T>` — loaded once, handles stay valid
+- [x] Placeholder for a missing texture, reported once
 - [ ] Async loading on a worker pool
-- [ ] **Hot reload** — watch, reload, swap behind live handles
-- [ ] Import pipeline — PNG → Sprite, WAV → Cue
+- [x] **Hot reload** — watch, reload, swap behind live handles (decision 016)
+- [x] PNG → texture, through `Textures`
+- [ ] Import pipeline — WAV → Cue
 - [ ] `asset!` macro resolving paths at compile time
 - [ ] Dependency tracking (a tileset depends on its sprite)
 
 ## M2.6 Scenes
 
-- [ ] Text format (TOML)
-- [ ] Save — write only fields that differ from type defaults
-- [ ] Load — instantiate via reflection
+- [x] Text format (TOML)
+- [x] Save — write only fields that differ from type defaults
+- [x] Load — instantiate via reflection
 - [ ] Multiple scenes loaded at once, each tracking its own actors
 - [ ] Unload a scene independently
 - [ ] `[?]` Nesting and overrides — the prefab problem; deferring is fine,
   ignoring forever is not
-- [ ] `tests/` — round-trip fidelity, unknown field tolerance, renamed fields
+- [x] `tests/` — round-trip fidelity, unknown field tolerance, renamed fields
 
 ## M2.7 Attachment
 
@@ -321,20 +329,19 @@ shipped a game is a hypothesis, not a tool.
 No editor exists yet. The game is built by writing Rust and hand-editing scene
 files, and that is deliberate — it proves the runtime stands on its own.
 
-- [ ] `[?]` Pick the game. Small and finishable. A single-screen platformer or a
-  tiny mining/building loop — **not** the full Terraria-like
-- [ ] Player controller that feels good (this is where buffering and coyote time
-  earn their place)
-- [ ] Two or three enemy types with distinct behaviour
-- [ ] Collision, damage, death, respawn
-- [ ] A basic inventory
-- [ ] Tile placing and breaking
-- [ ] Save and load of world state (distinct from scenes — runtime state)
-- [ ] Sound effects and music
-- [ ] A title screen and a pause menu (immediate-mode stopgap; `raster-ui` is M4)
-- [ ] Win or loss condition
+- [x] Pick the game — a single-screen platformer (decision 018)
+- [x] Player controller — run, jump, wall and platform collision
+- [x] Three enemy types: walker, spike, flyer
+- [x] Collision, damage, death, respawn
+- [ ] A basic inventory — dropped from M3 with the mining loop (decision 018)
+- [ ] Tile placing and breaking — same
+- [x] Save and load of progress (distinct from scenes — runtime state)
+- [x] Sound effects
+- [ ] Music
+- [x] A title screen and a pause menu (sprites, no text until M4)
+- [x] Win and loss conditions
 - [ ] Ship a build for macOS and one other platform
-- [ ] **Write down every friction encountered.** This list is the input to M4–M8
+- [x] **Write down every friction encountered** — `docs/friction.md`
 
 **M3 done when:** someone who is not you can download it, play it, and finish it.
 
@@ -647,7 +654,9 @@ Structure, per `docs/decisions/010-testing-layout.md`:
 
 - [ ] Keep building a real game against the engine, continuously
 - [ ] Every friction becomes an issue
-- [ ] The Terraria-like remains the long-term target that justifies the design
+- [ ] The Terraria-like remains the long-term target the engine is *sized*
+  against — a yardstick for whether it holds up, never a reason to specialise
+  the engine towards one game
 
 ---
 

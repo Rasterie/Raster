@@ -3,9 +3,8 @@ use std::num::NonZeroU32;
 
 /// Storage for every actor of one concrete type.
 ///
-/// Keeping each type in its own dense `Vec` is what makes iterating one type
-/// fast — 9.4× faster than a boxed arena at 25 000 actors, which is the
-/// measurement decision 013 turned on.
+/// Un `Vec` dense par type : 9,4x plus rapide qu'une arene boxee a 25 000
+/// acteurs, la mesure sur laquelle la decision 013 a bascule.
 #[derive(Debug)]
 pub(crate) struct Pool<T> {
     slots: Vec<Option<T>>,
@@ -38,9 +37,7 @@ impl<T> Pool<T> {
     }
 
     /// Removes an actor, returning it so a caller can run teardown on it.
-    ///
-    /// Returns `None` for an id that is already dead: despawning twice is a
-    /// normal race in gameplay code, not a programming error.
+    /// `None` si l'identifiant est deja mort.
     pub(crate) fn despawn(&mut self, id: ActorId) -> Option<T> {
         let generation = NonZeroU32::new(id.generation())?;
         if !self.generations.free(id.index(), generation) {
@@ -59,10 +56,8 @@ impl<T> Pool<T> {
         self.slot_index(id).and_then(|i| self.slots[i].as_mut())
     }
 
-    /// Resolves an id to a slot index, checking the generation.
-    ///
-    /// This is what makes a stale id safe: it resolves to `None` rather than to
-    /// whichever actor now occupies the slot.
+    /// Resout un identifiant, generation comprise : un identifiant perime
+    /// donne `None` plutot que l'acteur qui occupe desormais l'emplacement.
     #[inline]
     fn slot_index(&self, id: ActorId) -> Option<usize> {
         if id.type_tag() != self.tag {
@@ -88,12 +83,7 @@ impl<T> Pool<T> {
 
     pub(crate) fn iter_mut(&mut self) -> impl Iterator<Item = (ActorId, &mut T)> {
         let tag = self.tag;
-        /*
-          Les generations sont empruntees en lecture et les emplacements en
-          ecriture. Les deux vivent dans des champs distincts de la struct, ce
-          que le compilateur accepte si on les separe avant la fermeture — sans
-          quoi il verrait un emprunt de `self` entier.
-        */
+        // Emprunts separes : le compilateur verrait sinon `self` en entier.
         let generations = self.generations.raw_slots();
 
         self.slots

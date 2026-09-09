@@ -3,14 +3,9 @@ use std::collections::BTreeMap;
 
 /// Everything the engine knows how to construct from a name.
 ///
-/// Loading a scene means turning the string `"Player"` into an actual `Player`,
-/// which needs a name-to-constructor map that only the game can populate — the
-/// engine cannot know the game's types.
-///
-/// Registration is explicit rather than collected by the linker. Linker-section
-/// tricks work until something is compiled as a static library or built for
-/// WebAssembly, and then they silently register nothing. A missing type here
-/// fails loudly at load time instead.
+/// Charger une scene transforme la chaine `"Player"` en un vrai `Player`.
+/// L'enregistrement est explicite : les astuces de section de lien
+/// n'enregistrent silencieusement rien en bibliotheque statique ou en WASM.
 #[derive(Default)]
 pub struct TypeRegistry {
     entries: BTreeMap<&'static str, Entry>,
@@ -20,12 +15,13 @@ struct Entry {
     info: &'static TypeInfo,
     /// Builds a default instance, which `apply` then fills in from the scene.
     construct: fn() -> Box<dyn ReflectObject>,
+    /// Le monde stocke par type concret, le registre ne connait que des objets
+    /// effaces : cette fonction, capturee avec le type, fait le pont.
+    spawn: fn(&mut crate::World, &Value) -> Option<crate::ActorId>,
 }
 
-/// A reflected value behind a trait object.
-///
-/// [`Reflect`] cannot be made into one directly because `type_info()` has no
-/// receiver; this trait is the object-safe half.
+/// A reflected value behind a trait object : la moitie de [`Reflect`] qui
+/// tolere l'effacement de type.
 pub trait ReflectObject: 'static {
     fn type_info(&self) -> &'static TypeInfo;
     fn get_field(&self, name: &str) -> Option<Value>;
@@ -84,15 +80,33 @@ impl TypeRegistry {
     }
 
     /// Registers a type, replacing any earlier entry under the same name.
-    pub fn register<T: Reflect + Default + Sized>(&mut self) {
+    pub fn register<T: crate::Actor>(&mut self) {
         let info = T::type_info();
         self.entries.insert(
             info.name,
             Entry {
                 info,
                 construct: || Box::new(T::default()),
+                spawn: |world, value| {
+                    let mut actor = T::default();
+                    actor.apply(value).ok()?;
+                    Some(world.spawn(actor))
+                },
             },
         );
+    }
+
+    /// Builds the named type and spawns it into `world`.
+    ///
+    /// `None` si le type est inconnu ou si les champs ne s'y appliquent pas.
+    pub fn spawn_into(
+        &self,
+        world: &mut crate::World,
+        name: &str,
+        value: &Value,
+    ) -> Option<crate::ActorId> {
+        let spawn = self.entries.get(name)?.spawn;
+        spawn(world, value)
     }
 
     #[must_use]
@@ -105,15 +119,13 @@ impl TypeRegistry {
         self.entries.contains_key(name)
     }
 
-    /// A default instance of the named type, or `None` if it was never
-    /// registered.
+    /// Une instance par defaut, ou `None` si le type n'est pas enregistre.
     #[must_use]
     pub fn construct(&self, name: &str) -> Option<Box<dyn ReflectObject>> {
         self.entries.get(name).map(|e| (e.construct)())
     }
 
-    /// Constructs the named type and applies `value` to it — the operation a
-    /// scene loader performs for every actor it reads.
+    /// Construit le type nomme puis lui applique `value`.
     pub fn construct_from(
         &self,
         name: &str,

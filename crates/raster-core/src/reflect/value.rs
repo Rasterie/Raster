@@ -4,9 +4,7 @@ use std::fmt;
 
 /// A value read from or written to a reflected field.
 ///
-/// This is the single currency shared by the inspector, scene serialisation and
-/// scripting. Without it each would need its own conversion layer, and the
-/// three would drift apart.
+/// La monnaie commune a l'inspecteur, la serialisation et le scripting.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Bool(bool),
@@ -16,11 +14,10 @@ pub enum Value {
     Vec2(Vec2),
     IVec2(IVec2),
     Rect(Rect),
-    /// A nested struct, keyed by field name.
-    ///
-    /// Ordered rather than hashed so that serialising the same value twice
-    /// produces byte-identical output — otherwise scene files would churn in
-    /// version control for no reason.
+    /// A path to an asset file.
+    Asset(crate::asset::AssetId),
+    /// A nested struct, keyed by field name. Ordonne plutot que hache : deux
+    /// serialisations d'une meme valeur doivent donner le meme fichier.
     Struct(BTreeMap<String, Value>),
     /// A sequence: `Vec<T>`, or a fixed-size array.
     List(Vec<Value>),
@@ -45,6 +42,7 @@ impl Value {
             Self::Vec2(_) => "Vec2",
             Self::IVec2(_) => "IVec2",
             Self::Rect(_) => "Rect",
+            Self::Asset(_) => "asset",
             Self::Struct(_) => "struct",
             Self::List(_) => "list",
             Self::Enum { .. } => "enum",
@@ -68,11 +66,7 @@ impl Value {
         }
     }
 
-    /// Accepts an integer as well as a float.
-    ///
-    /// A scene file writes `speed = 90` for a whole number, and refusing to
-    /// read that back into an `f32` would make hand-edited files fragile for no
-    /// good reason.
+    /// Accepte un entier comme un flottant : un fichier ecrit `speed = 90`.
     #[must_use]
     pub fn as_float(&self) -> Option<f64> {
         match self {
@@ -130,11 +124,7 @@ impl Value {
         }
     }
 
-    /// The value of a nested field, addressed by a dotted path such as
-    /// `body.velocity.x`.
-    ///
-    /// This is how an inspector edits a field several levels down, and how a
-    /// script reads one without walking the structure itself.
+    /// La valeur d'un champ imbrique, par chemin pointe : `body.velocity.x`.
     #[must_use]
     pub fn path(&self, path: &str) -> Option<&Value> {
         let mut current = self;
@@ -159,6 +149,7 @@ impl fmt::Display for Value {
             Self::Vec2(v) => write!(f, "{v}"),
             Self::IVec2(v) => write!(f, "{v}"),
             Self::Rect(v) => write!(f, "{v}"),
+            Self::Asset(v) => write!(f, "{v:?}"),
             Self::Struct(fields) => {
                 write!(f, "{{")?;
                 for (i, (name, value)) in fields.iter().enumerate() {

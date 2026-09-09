@@ -61,7 +61,7 @@ What is provided is what 2D action games actually use:
 
 - **AABB bodies** — static, kinematic and dynamic
 - **Tile collision** — against the tilemap grid, the dominant case for a
-  Terraria-like, and specialised rather than generalised
+  tile-based game, and specialised rather than generalised
 - **Swept collision** — continuous, so fast projectiles do not tunnel through
   walls
 - **One-way platforms** — solid from above, passable from below
@@ -114,7 +114,7 @@ tracks which actors it owns so it can be unloaded independently.
 
 ## Save games
 
-Called out because a Terraria-like makes it structural rather than an
+Called out because a mutable world makes it structural rather than an
 afterthought: the world is generated, then mutated indefinitely, and must
 survive a restart.
 

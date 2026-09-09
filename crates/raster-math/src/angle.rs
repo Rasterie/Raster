@@ -1,10 +1,7 @@
 use std::f32::consts::{PI, TAU};
 
-/// Wraps an angle into `(-π, π]`.
-///
-/// Angles accumulate: a spinning object's rotation grows without bound, and
-/// comparing two such angles fails once they differ by a full turn. Wrapping
-/// keeps them comparable.
+/// Ramene un angle dans `(-π, π]` : une rotation qui s'accumule devient sinon
+/// incomparable des qu'elle depasse un tour.
 #[inline]
 #[must_use]
 pub fn wrap_angle(radians: f32) -> f32 {
@@ -12,10 +9,8 @@ pub fn wrap_angle(radians: f32) -> f32 {
     if wrapped > PI { wrapped - TAU } else { wrapped }
 }
 
-/// The shortest signed rotation from `from` to `to`, in `(-π, π]`.
-///
-/// This is what makes a turret turn the short way round: interpolating from
-/// 350° to 10° should cross 0°, not wind backwards through 180°.
+/// La rotation signee la plus courte de `from` a `to` : de 350° a 10° on passe
+/// par 0°, pas par 180°.
 #[inline]
 #[must_use]
 pub fn angle_delta(from: f32, to: f32) -> f32 {
@@ -29,11 +24,8 @@ pub fn lerp_angle(from: f32, to: f32, t: f32) -> f32 {
     from + angle_delta(from, to) * t
 }
 
-/// Moves `from` towards `to` by at most `max_delta`, taking the shortest path.
-///
-/// Unlike an interpolation, this advances by a fixed amount per call, which is
-/// what a turn-rate limit needs: the object turns at a constant speed rather
-/// than easing in.
+/// Avance de `max_delta` au plus vers `to` : une vitesse de rotation
+/// constante, la ou une interpolation ralentirait en approchant.
 #[inline]
 #[must_use]
 pub fn rotate_towards(from: f32, to: f32, max_delta: f32) -> f32 {

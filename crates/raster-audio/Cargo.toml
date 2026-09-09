@@ -1,0 +1,14 @@
+[package]
+name = "raster-audio"
+version = "0.0.0"
+description = "The audio runtime for the Raster engine: cues, voices, buses, mixing."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+raster-core = { path = "../raster-core" }
+raster-math = { path = "../raster-math" }
+cpal = "0.18"

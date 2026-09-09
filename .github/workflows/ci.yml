@@ -33,6 +33,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Dependances systeme
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev \
+            libx11-dev libxcursor-dev libxrandr-dev libxi-dev libvulkan-dev
+
       - name: Verifie le formatage
         run: cargo fmt --all --check
 
@@ -91,6 +98,13 @@ jobs:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+
+      - name: Dependances systeme
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev \
+            libx11-dev libxcursor-dev libxrandr-dev libxi-dev libvulkan-dev
 
       # Un lien intra-doc casse est une erreur, pas un avertissement.
       - name: cargo doc

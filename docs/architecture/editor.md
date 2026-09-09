@@ -101,8 +101,8 @@ generation, palettes, OKLCH ramps with hue shifting, and the pixel art rules
 the flagship, and the clearest expression of what makes Raster distinct.
 
 **Tileset and tilemap** — define tiles from a sprite, set collision and autotile
-rules, then paint. Autotiling with 47-variant bitmasks, because a Terraria-like
-is unusable without it.
+rules, then paint. Autotiling with 47-variant bitmasks, without which painting
+a large tile world by hand is unusable.
 
 **Animation timeline** — frames, timing, events on frames, curve-based property
 animation. Shares the frame model with the sprite editor rather than redefining

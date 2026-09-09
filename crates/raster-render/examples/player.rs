@@ -8,11 +8,13 @@
 
 use raster_core::World;
 use raster_core::actor::Component;
+use raster_core::asset::{AssetId, Handle, Project};
 use raster_core::reflect::Reflect;
 use raster_input::{Action, Axis, Input};
 use raster_math::{Rect, Vec2};
 use raster_render::{
-    App, Camera, Colour, Gpu, Layer, SpriteBatch, SpriteDraw, Texture, WindowConfig,
+    App, Camera, Colour, Gpu, Layer, RenderTarget, SpriteBatch, SpriteDraw, Texture, Textures,
+    WindowConfig,
 };
 
 const LARGEUR: u32 = 320;
@@ -64,45 +66,18 @@ fn damier(taille: u32) -> Vec<u8> {
     pixels
 }
 
-/// Un petit personnage, dessine a la main pour n'avoir aucune dependance.
-fn bonhomme() -> Vec<u8> {
-    const MOTIF: [&str; 16] = [
-        "................",
-        ".....######.....",
-        "....########....",
-        "...##..##..##...",
-        "...##..##..##...",
-        "...##########...",
-        "....##....##....",
-        "...############.",
-        "..##.########.##",
-        "..##.########.##",
-        "..##.########.##",
-        ".....########...",
-        "....###....###..",
-        "....###....###..",
-        "....##......##..",
-        "...####....####.",
-    ];
-
-    let mut pixels = Vec::with_capacity(16 * 16 * 4);
-    for ligne in MOTIF {
-        for c in ligne.chars() {
-            if c == '#' {
-                pixels.extend_from_slice(&[240, 230, 210, 255]);
-            } else {
-                pixels.extend_from_slice(&[0, 0, 0, 0]);
-            }
-        }
-    }
-    pixels
-}
-
 struct Jeu {
     temps: f32,
     world: World,
     batch: Option<SpriteBatch>,
-    textures: Vec<Texture>,
+    /// Le rendu passe par une cible a la resolution du jeu, agrandie ensuite
+    /// d'un facteur entier. Dessiner directement dans la fenetre donnerait des
+    /// pixels de largeurs inegales des que celle-ci n'est pas un multiple
+    /// exact de 320x180.
+    target: Option<RenderTarget>,
+    textures: Option<Textures>,
+    damier: Option<Handle<Texture>>,
+    heros: Option<Handle<Texture>>,
     camera: Camera,
     joueur: Option<raster_core::ActorId>,
     quitter: bool,
@@ -114,7 +89,10 @@ impl Default for Jeu {
             temps: 0.0,
             world: World::new(),
             batch: None,
-            textures: Vec::new(),
+            target: None,
+            textures: None,
+            damier: None,
+            heros: None,
             camera: Camera::new(LARGEUR, HAUTEUR),
             joueur: None,
             quitter: false,
@@ -127,11 +105,27 @@ impl App for Jeu {
         let batch = SpriteBatch::new(gpu);
         let layout = batch.texture_layout();
 
-        self.textures = vec![
+        let projet = Project::discover(std::env::current_dir().unwrap_or_default())
+            .unwrap_or_else(|| Project::new("."));
+        let mut textures = Textures::new(gpu, layout, projet);
+
+        // Le damier est genere, le heros charge par son identifiant d'asset.
+        self.damier = Some(textures.insert(
+            AssetId::new("<damier>"),
             Texture::from_rgba(gpu, layout, &damier(16), 16, 16),
-            Texture::from_rgba(gpu, layout, &bonhomme(), 16, 16),
-        ];
+        ));
+        self.heros = Some(textures.load(
+            gpu,
+            layout,
+            &AssetId::new("crates/raster-render/examples/assets/heros.png"),
+        ));
+        self.textures = Some(textures);
         self.batch = Some(batch);
+
+        // Le batcher indexe une tranche : un handle lui donne son indice.
+        let damier_id = self.damier.expect("damier").index();
+        let heros_id = self.heros.expect("heros").index();
+        self.target = Some(RenderTarget::new(gpu, LARGEUR, HAUTEUR));
 
         self.world.register_component::<Player, Sprite>();
         self.world.register_component::<Decor, Sprite>();
@@ -140,7 +134,7 @@ impl App for Jeu {
         for i in -10..11 {
             self.world.spawn(Decor {
                 sprite: Sprite {
-                    texture: 0,
+                    texture: damier_id,
                     tint_r: 1.0,
                     tint_g: 1.0,
                     tint_b: 1.0,
@@ -151,7 +145,7 @@ impl App for Jeu {
         for (x, y) in [(-64.0, 44.0), (-48.0, 44.0), (48.0, 28.0), (64.0, 44.0)] {
             self.world.spawn(Decor {
                 sprite: Sprite {
-                    texture: 0,
+                    texture: damier_id,
                     tint_r: 0.7,
                     tint_g: 0.9,
                     tint_b: 1.0,
@@ -162,7 +156,7 @@ impl App for Jeu {
 
         self.joueur = Some(self.world.spawn(Player {
             sprite: Sprite {
-                texture: 1,
+                texture: heros_id,
                 tint_r: 1.0,
                 tint_g: 1.0,
                 tint_b: 1.0,
@@ -205,19 +199,30 @@ impl App for Jeu {
     }
 
     fn render(&mut self, gpu: &mut Gpu) {
-        let Some(batch) = self.batch.as_mut() else {
+        // Rechargement a chaud : reenregistrer heros.png le montre a l'ecran
+        // sans relancer le jeu.
+        if let (Some(textures), Some(batch)) = (self.textures.as_mut(), self.batch.as_ref()) {
+            for id in textures.reload_changed(gpu, batch.texture_layout()) {
+                println!("recharge : {id}");
+            }
+        }
+
+        let (Some(batch), Some(target)) = (self.batch.as_mut(), self.target.as_ref()) else {
             return;
         };
         let Some(mut frame) = gpu.begin_frame() else {
             return;
         };
 
-        frame.clear(raster_render::Color {
-            r: 0.05,
-            g: 0.05,
-            b: 0.09,
-            a: 1.0,
-        });
+        target.clear(
+            &mut frame,
+            raster_render::Color {
+                r: 0.05,
+                g: 0.05,
+                b: 0.09,
+                a: 1.0,
+            },
+        );
 
         // Le decor, puis le joueur par-dessus.
         for (_, decor) in self.world.iter::<Decor>() {
@@ -249,7 +254,18 @@ impl App for Jeu {
             );
         }
 
-        batch.flush(gpu, &mut frame, self.camera, &self.textures);
+        let textures = self.textures.as_ref().expect("textures");
+        batch.flush_into(
+            gpu,
+            &mut frame,
+            target.view(),
+            self.camera,
+            textures.as_slice(),
+        );
+
+        // Agrandit la cible sur la fenetre, d'un facteur entier.
+        let (w, h) = gpu.size();
+        target.present(&mut frame, Vec2::new(w as f32, h as f32));
 
         if self.temps.fract() < 0.017 {
             let s = batch.stats();
@@ -258,13 +274,17 @@ impl App for Jeu {
                 .and_then(|id| self.world.get::<Player>(id))
                 .map_or(Vec2::ZERO, |p| p.position);
             println!(
-                "joueur en ({:.0}, {:.0}), camera en ({:.1}, {:.1}), {} sprites en {} appels",
+                "joueur ({:.0}, {:.0}), camera ({:.1}, {:.1}), {} sprites en {} appels, \
+                 rendu {}x{} agrandi x{}",
                 position.x,
                 position.y,
                 self.camera.position.x,
                 self.camera.position.y,
                 s.sprites,
-                s.draw_calls
+                s.draw_calls,
+                LARGEUR,
+                HAUTEUR,
+                target.scale(Vec2::new(w as f32, h as f32)),
             );
         }
 

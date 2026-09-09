@@ -20,9 +20,6 @@ pub enum ReflectError {
     /// [`Reflect::set_field`].
     Readonly { field: String },
     /// An integer would not fit the field's type, or a float was not finite.
-    ///
-    /// Silently truncating would corrupt data from a hand-edited scene file
-    /// without telling anyone.
     OutOfRange { field: String, detail: String },
 }
 
@@ -49,11 +46,8 @@ impl fmt::Display for ReflectError {
 
 impl std::error::Error for ReflectError {}
 
-/// A type whose fields can be listed, read and written at runtime.
-///
-/// Implemented by `#[derive(Reflect)]` for structs, and by hand for the
-/// primitives below. Four features depend on it: the inspector, scene
-/// serialisation, scripting and hot reload.
+/// A type whose fields can be listed, read and written at runtime. Emis par
+/// `#[derive(Reflect)]`.
 pub trait Reflect: 'static {
     fn type_info() -> &'static TypeInfo
     where
@@ -66,19 +60,12 @@ pub trait Reflect: 'static {
 
     fn set_field(&mut self, name: &str, value: Value) -> Result<(), ReflectError>;
 
-    /// Writes a field, ignoring the readonly attribute.
-    ///
-    /// `readonly` means "the inspector must not offer this for editing", not
-    /// "this value cannot be restored". Loading a scene has to write every
-    /// serialised field, readonly ones included, or a saved value would be
-    /// lost on the next load.
+    /// Ecrit un champ en ignorant `readonly`, qui interdit l'edition mais pas
+    /// le rechargement d'une scene.
     fn set_field_unchecked(&mut self, name: &str, value: Value) -> Result<(), ReflectError>;
 
-    /// Writes a field addressed by its *serialised* name, which is what a
-    /// scene file carries and may differ from the Rust field name.
-    ///
-    /// Also ignores readonly, for the same reason as
-    /// [`Reflect::set_field_unchecked`].
+    /// Writes a field by its *serialised* name — celui que porte un fichier de
+    /// scene, qui peut differer du nom Rust. Ignore aussi readonly.
     fn set_field_by_serialized_name(
         &mut self,
         name: &str,
@@ -88,11 +75,8 @@ pub trait Reflect: 'static {
     /// The whole value, for serialisation and for nesting inside a parent.
     fn to_value(&self) -> Value;
 
-    /// Applies every field present in `value`, ignoring any it does not know.
-    ///
-    /// Tolerating unknown fields is deliberate: a scene written by a newer
-    /// version of the game must still load in an older one, minus what it
-    /// cannot understand. The alternative is refusing to open the file at all.
+    /// Applique les champs presents, ignorant les inconnus : une scene plus
+    /// recente reste chargeable.
     fn apply(&mut self, value: &Value) -> Result<(), ReflectError> {
         let Value::Struct(fields) = value else {
             return Err(ReflectError::TypeMismatch {
@@ -112,16 +96,12 @@ pub trait Reflect: 'static {
     }
 }
 
-/// A leaf value that reflection stores directly rather than descending into.
+/// A leaf value reflection stores directly rather than descending into.
 ///
-/// Separate from [`Reflect`] because these have no fields: asking a `f32` to
-/// list its fields is meaningless, and every derive would have to special-case
-/// them otherwise.
+/// Distinct de [`Reflect`] : demander ses champs a un `f32` n'a pas de sens.
 pub trait ReflectValue: Sized + 'static {
-    /// The kind of value this type stores.
-    ///
-    /// Const because a `FieldInfo` is a `static`, and its kind must therefore
-    /// be built at compile time.
+    /// The kind of value this type stores. Const, car un `FieldInfo` est un
+    /// `static`.
     const KIND: ValueKind;
 
     fn value_kind() -> ValueKind {
@@ -168,6 +148,19 @@ impl_reflect_value!(
 );
 
 impl_reflect_value!(
+    crate::asset::AssetId,
+    ValueKind::Asset,
+    |v: &crate::asset::AssetId| Value::Asset(v.clone()),
+    // Une chaine nue est acceptee : un fichier ecrit a la main n'a pas a savoir
+    // qu'un champ est un asset plutot qu'un texte.
+    |v: &Value| match v {
+        Value::Asset(id) => Ok(id.clone()),
+        Value::Str(path) => Ok(crate::asset::AssetId::new(path)),
+        other => Err(format!("expected an asset path, got {}", other.kind_name())),
+    }
+);
+
+impl_reflect_value!(
     Vec2,
     ValueKind::Vec2,
     |v: &Vec2| Value::Vec2(*v),
@@ -194,10 +187,8 @@ impl_reflect_value!(
         .ok_or_else(|| format!("expected Rect, got {}", v.kind_name()))
 );
 
-/// Integers all funnel through `i64`, with a range check on the way back.
-///
-/// A scene file could hold any integer; writing 300 into a `u8` must fail
-/// loudly rather than wrap around to 44.
+/// Les entiers passent tous par `i64`, avec un controle au retour : ecrire 300
+/// dans un `u8` doit echouer plutot que devenir 44.
 macro_rules! impl_reflect_int {
     ($($ty:ty),*) => {$(
         impl ReflectValue for $ty {
@@ -219,8 +210,7 @@ macro_rules! impl_reflect_int {
 
 impl_reflect_int!(i8, i16, i32, u8, u16, u32);
 
-/// `i64` and `u64` cannot use the macro above: `i64::from(i64)` is not a
-/// conversion, and `u64` does not convert into `i64` infallibly.
+/// `i64` et `u64` ne passent pas par la macro : leurs conversions different.
 impl ReflectValue for i64 {
     const KIND: ValueKind = ValueKind::Int;
     fn to_reflect_value(&self) -> Value {
@@ -236,8 +226,7 @@ impl ReflectValue for i64 {
 impl ReflectValue for u64 {
     const KIND: ValueKind = ValueKind::Int;
     fn to_reflect_value(&self) -> Value {
-        // Beyond i64::MAX the value cannot be represented; saturating keeps the
-        // file readable rather than emitting a negative number.
+        // Sature plutot que d'emettre un negatif au-dela de i64::MAX.
         Value::Int(i64::try_from(*self).unwrap_or(i64::MAX))
     }
     fn from_reflect_value(value: &Value) -> Result<Self, String> {
@@ -261,10 +250,8 @@ impl ReflectValue for usize {
     }
 }
 
-/// Floats reject NaN and infinity on the way in.
-///
-/// A NaN position propagates through every calculation it touches and is
-/// painful to trace back to the scene file that introduced it.
+/// Les flottants refusent NaN et l'infini : un NaN contamine tout calcul qu'il
+/// touche et remonte difficilement au fichier fautif.
 macro_rules! impl_reflect_float {
     ($($ty:ty),*) => {$(
         impl ReflectValue for $ty {

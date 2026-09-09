@@ -1,26 +1,18 @@
 /// The engine's clock.
-///
-/// Two deltas rather than one, and the distinction matters: `delta` is scaled
-/// by [`Time::scale`], so pausing the game freezes it, while `raw_delta` never
-/// is. UI animation runs on `raw_delta` — a pause menu that stops animating
-/// when the game pauses looks broken.
 #[derive(Debug, Clone, Copy)]
 pub struct Time {
-    /// Seconds since the last frame, scaled.
+    /// Seconds since the last frame, scaled by [`Time::scale`].
     pub delta: f32,
-    /// Seconds since the last frame, unscaled. For UI and anything that must
-    /// keep moving while the game is paused.
+    /// Seconds since the last frame, unscaled. UI runs on this so menus keep
+    /// animating while the game is paused.
     pub raw_delta: f32,
     /// Seconds since the game started, scaled.
     pub elapsed: f64,
-    /// Time multiplier. Zero pauses; slow motion is a game mechanic.
+    /// Time multiplier. Zero pauses.
     pub scale: f32,
     /// The fixed step, in seconds.
     pub fixed_delta: f32,
-    /// How far through the current fixed step the frame sits, from 0 to 1.
-    ///
-    /// Rendering interpolates by this so motion stays smooth even though
-    /// physics advances in discrete steps.
+    /// How far through the current fixed step this frame sits, 0 to 1.
     pub alpha: f32,
 }
 
@@ -38,8 +30,7 @@ impl Default for Time {
 }
 
 impl Time {
-    /// 60 fixed steps a second — the rate most 2D games tune their movement
-    /// against.
+    /// 60 steps a second, the rate most 2D games tune their movement against.
     pub const DEFAULT_FIXED_DELTA: f32 = 1.0 / 60.0;
 
     #[must_use]
@@ -50,16 +41,13 @@ impl Time {
 
 /// Runs game logic at a fixed rate, whatever the frame rate.
 ///
-/// A platformer stepping physics by the frame delta has a jump height that
-/// depends on the machine it runs on. That is discovered far too late, usually
-/// by a player on hardware the developer never had, so the engine makes the
-/// fixed step the default path rather than an option.
+/// Stepping physics by the frame delta gives a jump height that depends on the
+/// machine, which is discovered far too late.
 #[derive(Debug, Clone)]
 pub struct FrameLoop {
     time: Time,
     /// Time owed to the fixed step but not yet spent.
     accumulator: f32,
-    /// The most fixed steps one frame may run.
     max_steps: u32,
 }
 
@@ -70,19 +58,14 @@ impl Default for FrameLoop {
 }
 
 impl FrameLoop {
-    /// How many fixed steps a single frame may run before the rest is dropped.
+    /// Steps one frame may run before the rest is dropped.
     ///
-    /// Without a cap, a frame that took a long time — a breakpoint, a window
-    /// drag, a laptop waking up — owes so many steps that running them all
-    /// takes even longer, which owes more still. The simulation never catches
-    /// up and the game hangs. Better to lose time than to freeze: this is the
-    /// "spiral of death", and dropping the excess is the standard answer.
+    /// Uncapped, a slow frame owes steps that take longer still to run, and the
+    /// simulation never catches up — the spiral of death.
     pub const MAX_STEPS: u32 = 5;
 
-    /// The largest frame delta accepted.
-    ///
-    /// A frame longer than this almost certainly means the process was
-    /// suspended rather than that the game genuinely ran that slowly.
+    /// The largest frame delta accepted; beyond it the process was suspended
+    /// rather than slow.
     pub const MAX_FRAME_DELTA: f32 = 0.25;
 
     #[must_use]
@@ -111,30 +94,17 @@ impl FrameLoop {
         self.max_steps = steps.max(1);
     }
 
-    /// Advances by one frame, returning how many fixed steps to run.
-    ///
-    /// A frame runs its fixed steps first, then its variable update, then
-    /// draws — interpolating by [`Time::alpha`].
+    /// Advances one frame, returning the fixed steps to run before drawing.
     pub fn advance(&mut self, raw_delta: f32) -> Steps {
-        // Une frame trop longue signale une suspension du processus, pas un
-        // ralentissement du jeu : on la traite comme une frame normale plutot
-        // que de faire un bond dans la simulation.
         let raw_delta = raw_delta.clamp(0.0, Self::MAX_FRAME_DELTA);
 
         self.time.raw_delta = raw_delta;
         self.time.delta = raw_delta * self.time.scale;
         self.time.elapsed += f64::from(self.time.delta);
-
         self.accumulator += self.time.delta;
 
-        /*
-          Une tolerance, parce que les f32 s'accumulent mal : trois pas de
-          16,667 ms retirés de 50 ms laissent 3,7 ns de moins qu'un pas, et le
-          troisieme ne se declencherait jamais. A 20 images/s constantes, la
-          simulation perdrait ainsi un pas sur trois et le jeu tournerait au
-          ralenti. La tolerance vaut un millieme de pas, soit bien plus que
-          l'erreur accumulee et bien moins que ce qui se percoit.
-        */
+        // Tolerance : trois pas de 16,667 ms retires de 50 ms laissent, en f32,
+        // 3,7 ns de moins qu'un pas, et le troisieme ne partirait jamais.
         let seuil = self.time.fixed_delta * (1.0 - 1e-3);
 
         let mut steps = 0;
@@ -142,15 +112,10 @@ impl FrameLoop {
             self.accumulator -= self.time.fixed_delta;
             steps += 1;
         }
-
-        // Le retrait peut passer legerement sous zero a cause de la tolerance.
         self.accumulator = self.accumulator.max(0.0);
 
-        /*
-          Le reste depasse encore un pas : la frame a pris trop de temps. On
-          abandonne ce qui reste plutot que de le reporter, sinon la dette
-          s'accumulerait sans jamais etre rattrapee.
-        */
+        // La frame a pris trop de temps : on abandonne le reste plutot que de
+        // reporter une dette qui ne serait jamais rattrapee.
         if self.accumulator >= seuil {
             self.accumulator = 0.0;
         }
