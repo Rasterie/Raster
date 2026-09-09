@@ -77,6 +77,20 @@ impl Keystone {
         }
     }
 
+    /// Les commandes d'un menu, lues depuis les actions du jeu.
+    ///
+    /// Faute d'actions d'interface dediees, la navigation emprunte l'axe
+    /// vertical et le saut — voir `docs/friction.md`, entree 6.
+    fn menu_keys(&self, input: &Input, confirm: bool) -> Keys {
+        let axe = input.axis(&Axis::VERTICAL);
+        Keys {
+            next: axe > 0.0,
+            previous: axe < 0.0,
+            confirm,
+            ..Keys::default()
+        }
+    }
+
     fn play(&mut self, sound: usize, bus: Bus) {
         if let (Some(audio), Some(&handle)) = (self.audio.as_mut(), self.sounds.get(sound)) {
             audio.play(handle, Play::new().on(bus));
@@ -164,16 +178,11 @@ impl App for Keystone {
         };
 
         match self.game.screen {
-            Screen::Title => {
-                if confirm {
-                    match save::load(save::default_path()) {
-                        Ok(progress) if progress.room > 0 => self.game.resume(progress),
-                        _ => self.game.start(),
-                    }
-                }
-                if input.pressed(&Action::PAUSE) {
+            Screen::Title | Screen::Dead | Screen::Won => {
+                if self.game.screen == Screen::Title && input.pressed(&Action::PAUSE) {
                     self.quit = true;
                 }
+                self.ui_keys = self.menu_keys(input, confirm);
             }
             Screen::Playing => {
                 if input.pressed(&Action::PAUSE) {
@@ -184,24 +193,7 @@ impl App for Keystone {
                 if input.pressed(&Action::PAUSE) {
                     self.game.screen = Screen::Playing;
                 }
-                let axe = input.axis(&Axis::VERTICAL);
-                self.ui_keys = Keys {
-                    next: axe > 0.0,
-                    previous: axe < 0.0,
-                    confirm,
-                    ..Keys::default()
-                };
-            }
-            Screen::Dead => {
-                if confirm {
-                    self.game.respawn();
-                }
-            }
-            Screen::Won => {
-                if confirm {
-                    let _ = std::fs::remove_file(save::default_path());
-                    self.game = Game::new();
-                }
+                self.ui_keys = self.menu_keys(input, confirm);
             }
         }
 
@@ -233,7 +225,29 @@ impl App for Keystone {
         let painter = Painter::new(WHITE);
 
         if game.screen == Screen::Title {
-            title(batch, &painter);
+            let reprise = save::load(save::default_path()).ok().filter(|p| p.room > 0);
+
+            match title_menu(
+                &mut self.ui,
+                batch,
+                &painter,
+                self.ui_keys,
+                self.pointer,
+                reprise.is_some(),
+            ) {
+                Some(Title::Continue) => {
+                    if let Some(progress) = reprise {
+                        self.game.resume(progress);
+                    }
+                }
+                Some(Title::New) => {
+                    let _ = std::fs::remove_file(save::default_path());
+                    self.game.start();
+                }
+                Some(Title::Quit) => self.quit = true,
+                None => {}
+            }
+            self.ui_keys = Keys::default();
         } else {
             draw_room(batch, game);
             draw_actors(batch, game);
@@ -253,20 +267,37 @@ impl App for Keystone {
                     }
                     self.ui_keys = Keys::default();
                 }
-                Screen::Dead => banner(
-                    batch,
-                    &painter,
-                    "PERDU",
-                    "Espace pour reessayer",
-                    Colour::rgb(1.0, 0.48, 0.48),
-                ),
-                Screen::Won => banner(
-                    batch,
-                    &painter,
-                    "TERMINE",
-                    "Espace pour recommencer",
-                    Colour::rgb(1.0, 0.88, 0.46),
-                ),
+                Screen::Dead => {
+                    if end_menu(
+                        &mut self.ui,
+                        batch,
+                        &painter,
+                        self.ui_keys,
+                        self.pointer,
+                        "PERDU",
+                        "Reessayer",
+                        Colour::rgb(1.0, 0.48, 0.48),
+                    ) {
+                        self.game.respawn();
+                    }
+                    self.ui_keys = Keys::default();
+                }
+                Screen::Won => {
+                    if end_menu(
+                        &mut self.ui,
+                        batch,
+                        &painter,
+                        self.ui_keys,
+                        self.pointer,
+                        "TERMINE",
+                        "Recommencer",
+                        Colour::rgb(1.0, 0.88, 0.46),
+                    ) {
+                        let _ = std::fs::remove_file(save::default_path());
+                        self.game = Game::new();
+                    }
+                    self.ui_keys = Keys::default();
+                }
                 _ => {}
             }
         }
@@ -449,64 +480,136 @@ fn draw_hud(batch: &mut SpriteBatch, painter: &Painter, game: &Game) {
     }
 }
 
-/// L'ecran-titre.
-fn title(batch: &mut SpriteBatch, painter: &Painter) {
-    let centre = Vec2::new(WIDTH as f32 / 2.0, 44.0);
-
-    painter
-        .scaled(3.0)
-        .text(batch, centre, "KEYSTONE", Align::Centre, Colour::WHITE);
-
-    let pale = Colour::rgb(0.62, 0.66, 0.78);
-    painter.text(
-        batch,
-        Vec2::new(centre.x, 96.0),
-        "Espace pour jouer",
-        Align::Centre,
-        pale,
-    );
-    painter.text(
-        batch,
-        Vec2::new(centre.x, 112.0),
-        "Fleches ou ZQSD pour bouger",
-        Align::Centre,
-        pale,
-    );
-    painter.text(
-        batch,
-        Vec2::new(centre.x, 124.0),
-        "Echap pour quitter",
-        Align::Centre,
-        pale,
-    );
+/// Ce que l'ecran-titre peut declencher.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Title {
+    Continue,
+    New,
+    Quit,
 }
 
-/// Un bandeau centre, sur un fond qui assombrit le jeu derriere.
-fn banner(
+/// L'ecran-titre, avec ses boutons.
+fn title_menu(
+    ui: &mut Ui,
     batch: &mut SpriteBatch,
     painter: &Painter,
-    titre: &str,
-    sous_titre: &str,
-    teinte: Colour,
-) {
-    painter.rect(
-        batch,
-        Rect::new(0.0, 0.0, WIDTH as f32, HEIGHT as f32),
-        Colour::rgba(0.02, 0.02, 0.04, 0.72),
-    );
+    keys: Keys,
+    pointer: Pointer,
+    resumable: bool,
+) -> Option<Title> {
+    use raster_ui::layout::{self, Axis, Size};
+
+    ui.begin(pointer, keys);
 
     let centre = WIDTH as f32 / 2.0;
-    painter
-        .scaled(2.0)
-        .text(batch, Vec2::new(centre, 72.0), titre, Align::Centre, teinte);
-
-    painter.text(
+    painter.scaled(3.0).text(
         batch,
-        Vec2::new(centre, 104.0),
-        sous_titre,
+        Vec2::new(centre, 30.0),
+        "KEYSTONE",
         Align::Centre,
-        Colour::rgb(0.70, 0.74, 0.84),
+        Colour::WHITE,
     );
+
+    let cadre = layout::centre(
+        Rect::new(0.0, 0.0, WIDTH as f32, HEIGHT as f32),
+        Vec2::new(140.0, 76.0),
+    );
+    let cadre = Rect::new(cadre.position.x, 74.0, cadre.size.x, cadre.size.y);
+    let interieur = widgets::panel(ui, batch, painter, cadre);
+
+    let lignes = layout::stack(
+        layout::inset(interieur, 6.0),
+        Axis::Vertical,
+        6.0,
+        &[Size::Fixed(16.0), Size::Fixed(16.0), Size::Fixed(16.0)],
+    );
+
+    let menu = Id::new("titre");
+    let mut choix = None;
+
+    // Reprendre n'est actif qu'avec une partie en cours.
+    let reprendre = widgets::button_enabled(
+        ui,
+        batch,
+        painter,
+        menu.index(0),
+        lignes[0],
+        "Reprendre",
+        resumable,
+    );
+    if reprendre.clicked {
+        choix = Some(Title::Continue);
+    }
+
+    if widgets::button(
+        ui,
+        batch,
+        painter,
+        menu.index(1),
+        lignes[1],
+        "Nouvelle partie",
+    )
+    .clicked
+    {
+        choix = Some(Title::New);
+    }
+    if widgets::button(ui, batch, painter, menu.index(2), lignes[2], "Quitter").clicked {
+        choix = Some(Title::Quit);
+    }
+
+    widgets::hint(
+        ui,
+        batch,
+        painter,
+        Vec2::new(centre, HEIGHT as f32 - 14.0),
+        "Fleches ou ZQSD pour bouger, Espace pour sauter",
+        Align::Centre,
+    );
+
+    ui.end();
+    choix
+}
+
+/// L'ecran de fin, gagne ou perdu : un titre et un bouton.
+#[allow(clippy::too_many_arguments)]
+fn end_menu(
+    ui: &mut Ui,
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    keys: Keys,
+    pointer: Pointer,
+    titre: &str,
+    action: &str,
+    teinte: Colour,
+) -> bool {
+    use raster_ui::layout;
+
+    ui.begin(pointer, keys);
+
+    let ecran = Rect::new(0.0, 0.0, WIDTH as f32, HEIGHT as f32);
+    let interieur = widgets::modal(ui, batch, painter, ecran, Vec2::new(150.0, 76.0));
+
+    painter.scaled(2.0).text(
+        batch,
+        Vec2::new(ecran.size.x / 2.0, interieur.position.y + 8.0),
+        titre,
+        Align::Centre,
+        teinte,
+    );
+
+    let bouton = layout::centre(
+        Rect::new(
+            interieur.position.x,
+            interieur.position.y + interieur.size.y - 26.0,
+            interieur.size.x,
+            18.0,
+        ),
+        Vec2::new(110.0, 16.0),
+    );
+
+    let clique = widgets::button(ui, batch, painter, Id::new("fin"), bouton, action).clicked;
+    ui.end();
+    clique
 }
 
 /// Une note, avec une enveloppe pour qu'elle ne claque pas.
