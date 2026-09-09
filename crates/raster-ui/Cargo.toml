@@ -12,3 +12,4 @@ authors.workspace = true
 raster-core = { path = "../raster-core" }
 raster-math = { path = "../raster-math" }
 raster-input = { path = "../raster-input" }
+raster-render = { path = "../raster-render" }

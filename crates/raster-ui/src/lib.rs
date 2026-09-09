@@ -4,7 +4,9 @@
 //! Entree" sans dependre d'un asset.
 
 pub mod font;
+pub mod paint;
 pub mod text;
 
 pub use font::{ADVANCE, GLYPH_HEIGHT, GLYPH_WIDTH, LINE_HEIGHT};
+pub use paint::Painter;
 pub use text::{Align, Placed, layout, measure};
