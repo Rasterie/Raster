@@ -14,6 +14,8 @@ pub enum Value {
     Vec2(Vec2),
     IVec2(IVec2),
     Rect(Rect),
+    /// A path to an asset file.
+    Asset(crate::asset::AssetId),
     /// A nested struct, keyed by field name. Ordonne plutot que hache : deux
     /// serialisations d'une meme valeur doivent donner le meme fichier.
     Struct(BTreeMap<String, Value>),
@@ -40,6 +42,7 @@ impl Value {
             Self::Vec2(_) => "Vec2",
             Self::IVec2(_) => "IVec2",
             Self::Rect(_) => "Rect",
+            Self::Asset(_) => "asset",
             Self::Struct(_) => "struct",
             Self::List(_) => "list",
             Self::Enum { .. } => "enum",
@@ -146,6 +149,7 @@ impl fmt::Display for Value {
             Self::Vec2(v) => write!(f, "{v}"),
             Self::IVec2(v) => write!(f, "{v}"),
             Self::Rect(v) => write!(f, "{v}"),
+            Self::Asset(v) => write!(f, "{v:?}"),
             Self::Struct(fields) => {
                 write!(f, "{{")?;
                 for (i, (name, value)) in fields.iter().enumerate() {
