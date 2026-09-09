@@ -14,7 +14,7 @@ mod time;
 mod world;
 
 pub use actor::{Actor, ActorId, Behaviour};
-pub use asset::{AssetError, AssetId, AssetStore, Handle, Project};
+pub use asset::{AssetError, AssetId, AssetStore, Handle, Project, Watcher};
 pub use scene::{Scene, SceneError};
 pub use time::{FrameLoop, Steps, Time};
 pub use world::World;
