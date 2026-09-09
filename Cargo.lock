@@ -1450,6 +1450,7 @@ dependencies = [
  "bytemuck",
  "png",
  "pollster",
+ "raster-2d",
  "raster-core",
  "raster-input",
  "raster-math",
