@@ -18,8 +18,8 @@ pub use layout::{Anchor, Axis, Size, stack};
 pub use paint::Painter;
 pub use text::{Align, Placed, layout, measure};
 pub use theme::{State, Theme};
-pub use ui::{Keys, Pointer, Response, Ui};
+pub use ui::{Drag, Keys, Pointer, Response, Ui};
 pub use widgets::{
-    button, checkbox, clip_end, edit, label, list, modal, panel, progress, radio, slider, tabs,
-    text_field,
+    button, checkbox, clip_end, drag_value, dropdown, edit, end_scroll, label, list, modal, panel,
+    progress, radio, scroll_area, slider, splitter, tabs, text_field, tooltip,
 };
