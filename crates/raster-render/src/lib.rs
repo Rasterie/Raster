@@ -29,4 +29,8 @@ pub use target::RenderTarget;
 pub use texture::Texture;
 pub use textures::{TextureError, Textures};
 pub use tilemap_draw::{TileStats, TilemapRenderer, tile_neighbours, tile_variant};
+/// Le format d'une texture pour le batcher.
+///
+/// Reexporte : un jeu qui cree une texture n'a pas a dependre de wgpu.
+pub use wgpu::BindGroupLayout as TextureLayout;
 pub use wgpu::Color;
