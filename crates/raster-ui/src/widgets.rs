@@ -513,3 +513,284 @@ pub fn modal(
     let area = crate::layout::centre(screen, size);
     panel(ui, batch, painter, area)
 }
+
+/// A scrolling viewport over content taller than its area.
+///
+/// Renvoie la zone ou dessiner le contenu, decalee du defilement, et la
+/// decoupe est posee pour que rien ne deborde.
+pub fn scroll_area(
+    ui: &mut Ui,
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    id: Id,
+    area: Rect,
+    content_height: f32,
+) -> (Rect, Option<raster_math::IRect>) {
+    let theme = *ui.theme();
+    ui.interact(id, area, true);
+
+    let overflow = (content_height - area.size.y).max(0.0);
+    let mut offset = ui.remember(id, 0.0);
+
+    // La molette defile de trois lignes a la fois, comme partout.
+    let wheel = ui.wheel_over(id);
+    if wheel != 0.0 {
+        offset += wheel * theme.row_height * 3.0;
+    }
+    offset = offset.clamp(0.0, overflow);
+    ui.store(id, offset);
+
+    painter.rect(batch, area, theme.pressed);
+
+    // La barre n'apparait que s'il y a de quoi defiler.
+    if overflow > 0.0 {
+        let track = Rect::new(
+            area.position.x + area.size.x - 4.0,
+            area.position.y,
+            4.0,
+            area.size.y,
+        );
+        let ratio = area.size.y / content_height;
+        let thumb_height = (area.size.y * ratio).max(8.0);
+        let travel = area.size.y - thumb_height;
+
+        painter.rect(batch, track, theme.surface);
+        painter.rect(
+            batch,
+            Rect::new(
+                track.position.x,
+                track.position.y + travel * (offset / overflow),
+                track.size.x,
+                thumb_height,
+            ),
+            theme.border,
+        );
+    }
+
+    let previous = batch.push_clip(area);
+    let inner = Rect::new(
+        area.position.x,
+        area.position.y - offset,
+        area.size.x - if overflow > 0.0 { 6.0 } else { 0.0 },
+        content_height.max(area.size.y),
+    );
+
+    (inner, previous)
+}
+
+/// Ends a scroll area, restoring what was clipped before.
+pub fn end_scroll(batch: &mut SpriteBatch, previous: Option<raster_math::IRect>) {
+    batch.pop_clip(previous);
+}
+
+/// A draggable divider between two panels.
+///
+/// Renvoie la nouvelle position, en pixels depuis le bord de `area`.
+pub fn splitter(
+    ui: &mut Ui,
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    id: Id,
+    area: Rect,
+    axis: crate::layout::Axis,
+    position: f32,
+) -> f32 {
+    use crate::layout::Axis;
+
+    let theme = *ui.theme();
+    let thickness = 4.0;
+
+    let handle = match axis {
+        Axis::Horizontal => Rect::new(
+            area.position.x + position - thickness / 2.0,
+            area.position.y,
+            thickness,
+            area.size.y,
+        ),
+        Axis::Vertical => Rect::new(
+            area.position.x,
+            area.position.y + position - thickness / 2.0,
+            area.size.x,
+            thickness,
+        ),
+    };
+
+    let response = ui.interact(id, handle, true);
+    let mut moved = position;
+
+    if response.held {
+        moved = match axis {
+            Axis::Horizontal => ui.pointer().at.x - area.position.x,
+            Axis::Vertical => ui.pointer().at.y - area.position.y,
+        };
+    }
+
+    // Bornee : un panneau reduit a rien ne se rattrape plus a la souris.
+    let limit = match axis {
+        Axis::Horizontal => area.size.x,
+        Axis::Vertical => area.size.y,
+    };
+    moved = moved.clamp(24.0, (limit - 24.0).max(24.0));
+
+    let colour = if response.held || response.hovered {
+        theme.focus
+    } else {
+        theme.border
+    };
+    painter.rect(batch, handle, colour);
+
+    moved
+}
+
+/// A number edited by dragging left and right.
+///
+/// Ce dont un inspecteur est fait : taper chaque valeur serait insupportable.
+pub fn drag_value(
+    ui: &mut Ui,
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    id: Id,
+    area: Rect,
+    value: &mut f32,
+    speed: f32,
+) -> bool {
+    let response = ui.interact(id, area, true);
+    let theme = *ui.theme();
+    let before = *value;
+
+    if response.held {
+        *value += ui.pointer().delta.x * speed;
+    }
+    if response.focused {
+        if ui.keys().left {
+            *value -= speed;
+        }
+        if ui.keys().right {
+            *value += speed;
+        }
+    }
+
+    painter.rect(batch, area, theme.surface_for(response.state()));
+    painter.outline(
+        batch,
+        area,
+        if response.focused {
+            theme.focus
+        } else {
+            theme.border
+        },
+    );
+
+    // Deux decimales : au-dela, un inspecteur devient illisible.
+    let texte = format!("{:.2}", *value);
+    painter.text(
+        batch,
+        Vec2::new(
+            area.position.x + area.size.x / 2.0,
+            area.position.y + (area.size.y - painter.measure(&texte).y) / 2.0,
+        ),
+        &texte,
+        Align::Centre,
+        theme.text,
+    );
+
+    (*value - before).abs() > f32::EPSILON
+}
+
+/// A dropdown: a button that opens a list of choices.
+///
+/// Renvoie l'indice choisi cette frame. L'ouverture est gardee en memoire, donc
+/// le menu survit d'une frame a l'autre.
+pub fn dropdown(
+    ui: &mut Ui,
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    id: Id,
+    area: Rect,
+    items: &[&str],
+    selected: usize,
+) -> Option<usize> {
+    let theme = *ui.theme();
+    let label = items.get(selected).copied().unwrap_or("");
+
+    let mut open = ui.remember(id, 0.0) > 0.5;
+    if button(ui, batch, painter, id.child("bouton"), area, label).clicked {
+        open = !open;
+    }
+
+    let mut chosen = None;
+
+    if open && !items.is_empty() {
+        let height = items.len() as f32 * theme.row_height + theme.padding * 2.0;
+        let liste = Rect::new(
+            area.position.x,
+            area.position.y + area.size.y,
+            area.size.x,
+            height,
+        );
+
+        // Le menu deborde de son parent : la decoupe doit etre levee, sinon il
+        // serait coupe par le panneau qui le contient.
+        let previous = batch.clip();
+        batch.clear_clip();
+
+        if let Some(index) = list(
+            ui,
+            batch,
+            painter,
+            id.child("liste"),
+            liste,
+            items,
+            selected,
+        ) {
+            chosen = Some(index);
+            open = false;
+        }
+
+        // Cliquer ailleurs referme, comme tout menu.
+        if ui.pointer().pressed
+            && !liste.contains(ui.pointer().at)
+            && !area.contains(ui.pointer().at)
+        {
+            open = false;
+        }
+
+        batch.pop_clip(previous);
+    }
+
+    ui.store(id, f32::from(u8::from(open)));
+    chosen
+}
+
+/// A tooltip beside a widget, drawn above everything.
+pub fn tooltip(ui: &Ui, batch: &mut SpriteBatch, painter: &Painter, near: Rect, text: &str) {
+    let theme = ui.theme();
+    let size = painter.measure(text);
+    let box_size = Vec2::new(size.x + theme.padding * 2.0, size.y + theme.padding * 2.0);
+
+    let area = Rect::new(
+        near.position.x,
+        near.position.y + near.size.y + 2.0,
+        box_size.x,
+        box_size.y,
+    );
+
+    // Au-dessus de tout, et hors decoupe : une infobulle deborde par nature.
+    let previous = batch.clip();
+    batch.clear_clip();
+
+    painter.rect(batch, area, theme.surface);
+    painter.outline(batch, area, theme.border);
+    painter.text(
+        batch,
+        Vec2::new(
+            area.position.x + theme.padding,
+            area.position.y + theme.padding,
+        ),
+        text,
+        Align::Left,
+        theme.text,
+    );
+
+    batch.pop_clip(previous);
+}

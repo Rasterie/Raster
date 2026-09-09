@@ -22,6 +22,7 @@ fn click(ui: &mut Ui, id: Id, area: Rect) -> bool {
         down: true,
         pressed: true,
         released: false,
+        ..Pointer::default()
     };
     ui.begin(appui, Keys::default());
     ui.interact(id, area, true);
@@ -32,6 +33,7 @@ fn click(ui: &mut Ui, id: Id, area: Rect) -> bool {
         down: false,
         pressed: false,
         released: true,
+        ..Pointer::default()
     };
     ui.begin(relache, Keys::default());
     let response = ui.interact(id, area, true);
