@@ -13,6 +13,8 @@ pub fn to_toml(value: &Value) -> toml::Value {
         Value::Int(v) => toml::Value::Integer(*v),
         Value::Float(v) => toml::Value::Float(*v),
         Value::Str(v) => toml::Value::String(v.clone()),
+        // Un asset s'ecrit comme son chemin : c'est ce que le champ contient.
+        Value::Asset(v) => toml::Value::String(v.to_string()),
 
         Value::Vec2(v) => floats(&[v.x, v.y]),
         Value::IVec2(v) => toml::Value::Array(vec![
@@ -57,7 +59,10 @@ pub fn from_toml(value: &toml::Value, hint: Option<&crate::reflect::ValueKind>) 
         toml::Value::Boolean(v) => Value::Bool(*v),
         toml::Value::Integer(v) => Value::Int(*v),
         toml::Value::Float(v) => Value::Float(*v),
-        toml::Value::String(v) => Value::Str(v.clone()),
+        toml::Value::String(v) => match hint {
+            Some(ValueKind::Asset) => Value::Asset(crate::AssetId::new(v)),
+            _ => Value::Str(v.clone()),
+        },
         toml::Value::Datetime(v) => Value::Str(v.to_string()),
 
         toml::Value::Array(items) => match (hint, items.len()) {

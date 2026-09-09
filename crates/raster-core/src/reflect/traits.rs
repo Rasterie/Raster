@@ -148,6 +148,19 @@ impl_reflect_value!(
 );
 
 impl_reflect_value!(
+    crate::asset::AssetId,
+    ValueKind::Asset,
+    |v: &crate::asset::AssetId| Value::Asset(v.clone()),
+    // Une chaine nue est acceptee : un fichier ecrit a la main n'a pas a savoir
+    // qu'un champ est un asset plutot qu'un texte.
+    |v: &Value| match v {
+        Value::Asset(id) => Ok(id.clone()),
+        Value::Str(path) => Ok(crate::asset::AssetId::new(path)),
+        other => Err(format!("expected an asset path, got {}", other.kind_name())),
+    }
+);
+
+impl_reflect_value!(
     Vec2,
     ValueKind::Vec2,
     |v: &Vec2| Value::Vec2(*v),

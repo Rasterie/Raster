@@ -10,6 +10,9 @@ pub enum ValueKind {
     Vec2,
     IVec2,
     Rect,
+    /// Un chemin d'asset : une chaine, mais que l'inspecteur presente comme un
+    /// selecteur de fichier plutot qu'un champ texte.
+    Asset,
     /// A nested reflected struct, named so the registry can resolve it.
     Struct(&'static str),
     /// Une reference statique plutot qu'un `Box` : un `FieldInfo` est un
@@ -29,6 +32,7 @@ impl fmt::Display for ValueKind {
             Self::Vec2 => write!(f, "Vec2"),
             Self::IVec2 => write!(f, "IVec2"),
             Self::Rect => write!(f, "Rect"),
+            Self::Asset => write!(f, "asset"),
             Self::Struct(name) | Self::Enum(name) => write!(f, "{name}"),
             Self::List(inner) => write!(f, "[{inner}]"),
             Self::Option(inner) => write!(f, "{inner}?"),
