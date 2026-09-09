@@ -1,0 +1,13 @@
+[package]
+name = "raster-physics"
+version = "0.0.0"
+description = "AABB collision against tiles for the Raster engine."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+raster-math = { path = "../raster-math" }
+raster-2d = { path = "../raster-2d" }
