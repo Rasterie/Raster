@@ -7,11 +7,15 @@
 
 #![forbid(unsafe_code)]
 
+mod anim_state;
+mod animation;
 mod autotile;
 mod chunk;
 mod tile;
 mod tilemap;
 
+pub use anim_state::StateMachine;
+pub use animation::{Animation, Animator, Frame, Repeat};
 pub use autotile::{Neighbours, neighbours_of, should_autotile};
 pub use chunk::Chunk;
 pub use tile::{Collision, TileId, TileKind, Tileset};
