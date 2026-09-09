@@ -764,6 +764,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "keystone"
+version = "0.1.0"
+dependencies = [
+ "raster-2d",
+ "raster-audio",
+ "raster-core",
+ "raster-input",
+ "raster-math",
+ "raster-physics",
+ "raster-render",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

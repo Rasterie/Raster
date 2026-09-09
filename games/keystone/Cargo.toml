@@ -1,0 +1,19 @@
+[package]
+name = "keystone"
+version = "0.1.0"
+description = "The MVP game: a single-screen platformer, built with Raster."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+raster-core = { path = "../../crates/raster-core" }
+raster-math = { path = "../../crates/raster-math" }
+raster-2d = { path = "../../crates/raster-2d" }
+raster-input = { path = "../../crates/raster-input" }
+raster-physics = { path = "../../crates/raster-physics" }
+raster-render = { path = "../../crates/raster-render" }
+raster-audio = { path = "../../crates/raster-audio" }
