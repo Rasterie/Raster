@@ -380,12 +380,12 @@ tooltip all need it.
 The frame that holds the editors. Still no dedicated editors.
 
 - [ ] Editor binary, separate from the runtime
-- [ ] Docking — split, tab, float, resize
+- [x] Docking — split and tab; float comes with a second window
 - [ ] Layout persistence per project
 - [ ] Asset browser — tree, search, filter, drag and drop
-- [ ] **Global undo/redo** — one stack for every editor, not one per panel
-- [ ] Command pattern with coalescing (a drag is one undo entry)
-- [ ] **Reflection-driven inspector** — works on any `Reflect` type, honours
+- [x] **Global undo/redo** — one stack for every editor, not one per panel
+- [x] Command pattern with coalescing (a drag is one undo entry)
+- [x] **Reflection-driven inspector** — works on any `Reflect` type, honours
   `#[property]` attributes
 - [ ] Scene viewport — pan, zoom, grid, selection, box select
 - [ ] Gizmos — move, and scale where it applies
