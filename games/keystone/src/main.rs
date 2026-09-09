@@ -10,11 +10,12 @@ use keystone::world::TILE;
 use raster_audio::{Audio, Bus, Output, Play, Sound};
 use raster_core::asset::AssetId;
 use raster_input::{Action, Axis, Input};
-use raster_math::Vec2;
+use raster_math::{Rect, Vec2};
 use raster_render::{
     App, Camera, Colour, Gpu, Layer, RenderTarget, SpriteBatch, SpriteDraw, Texture, TextureLayout,
     WindowConfig,
 };
+use raster_ui::{Align, Painter};
 
 const WIDTH: u32 = 320;
 const HEIGHT: u32 = 176;
@@ -27,7 +28,7 @@ const FOE: usize = 3;
 const KEY: usize = 4;
 const DOOR: usize = 5;
 const HEART: usize = 6;
-const GLYPH: usize = 7;
+const WHITE: usize = 7;
 
 struct Keystone {
     game: Game,
@@ -85,7 +86,7 @@ impl App for Keystone {
             gem(gpu, layout, [238, 200, 96]),
             door(gpu, layout),
             gem(gpu, layout, [216, 96, 96]),
-            glyphs(gpu, layout),
+            Texture::white(gpu, layout),
         ];
 
         self.batch = Some(batch);
@@ -200,17 +201,38 @@ impl App for Keystone {
 
         let game = &self.game;
 
+        let painter = Painter::new(WHITE);
+
         if game.screen == Screen::Title {
-            title(batch);
+            title(batch, &painter);
         } else {
             draw_room(batch, game);
             draw_actors(batch, game);
             draw_hearts(batch, game);
+            draw_hud(batch, &painter, game);
 
             match game.screen {
-                Screen::Paused => banner(batch, 1),
-                Screen::Dead => banner(batch, 2),
-                Screen::Won => banner(batch, 3),
+                Screen::Paused => banner(
+                    batch,
+                    &painter,
+                    "PAUSE",
+                    "Echap pour reprendre",
+                    Colour::rgb(0.72, 0.80, 1.0),
+                ),
+                Screen::Dead => banner(
+                    batch,
+                    &painter,
+                    "PERDU",
+                    "Espace pour reessayer",
+                    Colour::rgb(1.0, 0.48, 0.48),
+                ),
+                Screen::Won => banner(
+                    batch,
+                    &painter,
+                    "TERMINE",
+                    "Espace pour recommencer",
+                    Colour::rgb(1.0, 0.88, 0.46),
+                ),
                 _ => {}
             }
         }
@@ -292,35 +314,85 @@ fn draw_hearts(batch: &mut SpriteBatch, game: &Game) {
     }
 }
 
-/// L'ecran-titre : un mot dessine en blocs, faute de rendu de texte avant M4.
-fn title(batch: &mut SpriteBatch) {
-    banner(batch, 0);
-}
+/// Le nom de la salle et les clefs, en haut de l'ecran.
+fn draw_hud(batch: &mut SpriteBatch, painter: &Painter, game: &Game) {
+    painter.text(
+        batch,
+        Vec2::new(WIDTH as f32 - 6.0, 6.0),
+        game.room().name.as_str(),
+        Align::Right,
+        Colour::rgb(0.62, 0.66, 0.78),
+    );
 
-/// Les bandeaux, dessines en blocs : `raster-ui` et le texte arrivent en M4.
-fn banner(batch: &mut SpriteBatch, which: usize) {
-    let (colour, rows) = match which {
-        0 => (Colour::WHITE, 3),
-        1 => (Colour::rgba(0.7, 0.8, 1.0, 1.0), 1),
-        2 => (Colour::rgba(1.0, 0.5, 0.5, 1.0), 1),
-        _ => (Colour::rgba(1.0, 0.9, 0.5, 1.0), 2),
-    };
-
-    let centre = Vec2::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
-    for row in 0..rows {
-        let width = 120.0 - row as f32 * 24.0;
-        batch.draw(
-            GLYPH,
-            SpriteDraw {
-                tint: colour,
-                layer: Layer(20),
-                ..SpriteDraw::new(
-                    Vec2::new(centre.x - width / 2.0, centre.y - 20.0 + row as f32 * 14.0),
-                    Vec2::new(width, 10.0),
-                )
-            },
+    if game.progress.keys > 0 {
+        painter.text(
+            batch,
+            Vec2::new(WIDTH as f32 - 6.0, 16.0),
+            "Clef prise",
+            Align::Right,
+            Colour::rgb(0.93, 0.78, 0.38),
         );
     }
+}
+
+/// L'ecran-titre.
+fn title(batch: &mut SpriteBatch, painter: &Painter) {
+    let centre = Vec2::new(WIDTH as f32 / 2.0, 44.0);
+
+    painter
+        .scaled(3.0)
+        .text(batch, centre, "KEYSTONE", Align::Centre, Colour::WHITE);
+
+    let pale = Colour::rgb(0.62, 0.66, 0.78);
+    painter.text(
+        batch,
+        Vec2::new(centre.x, 96.0),
+        "Espace pour jouer",
+        Align::Centre,
+        pale,
+    );
+    painter.text(
+        batch,
+        Vec2::new(centre.x, 112.0),
+        "Fleches ou ZQSD pour bouger",
+        Align::Centre,
+        pale,
+    );
+    painter.text(
+        batch,
+        Vec2::new(centre.x, 124.0),
+        "Echap pour quitter",
+        Align::Centre,
+        pale,
+    );
+}
+
+/// Un bandeau centre, sur un fond qui assombrit le jeu derriere.
+fn banner(
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    titre: &str,
+    sous_titre: &str,
+    teinte: Colour,
+) {
+    painter.rect(
+        batch,
+        Rect::new(0.0, 0.0, WIDTH as f32, HEIGHT as f32),
+        Colour::rgba(0.02, 0.02, 0.04, 0.72),
+    );
+
+    let centre = WIDTH as f32 / 2.0;
+    painter
+        .scaled(2.0)
+        .text(batch, Vec2::new(centre, 72.0), titre, Align::Centre, teinte);
+
+    painter.text(
+        batch,
+        Vec2::new(centre, 104.0),
+        sous_titre,
+        Align::Centre,
+        Colour::rgb(0.70, 0.74, 0.84),
+    );
 }
 
 /// Une note, avec une enveloppe pour qu'elle ne claque pas.
@@ -409,10 +481,6 @@ fn door(gpu: &Gpu, layout: &TextureLayout) -> Texture {
         }
     }
     Texture::from_rgba(gpu, layout, &pixels, 16, 24)
-}
-
-fn glyphs(gpu: &Gpu, layout: &TextureLayout) -> Texture {
-    Texture::from_rgba(gpu, layout, &[255, 255, 255, 255], 1, 1)
 }
 
 fn main() {

@@ -17,3 +17,4 @@ raster-input = { path = "../../crates/raster-input" }
 raster-physics = { path = "../../crates/raster-physics" }
 raster-render = { path = "../../crates/raster-render" }
 raster-audio = { path = "../../crates/raster-audio" }
+raster-ui = { path = "../../crates/raster-ui" }
