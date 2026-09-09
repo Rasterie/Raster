@@ -11,3 +11,4 @@ authors.workspace = true
 [dependencies]
 raster-math = { path = "../raster-math" }
 raster-derive = { path = "../raster-derive" }
+toml = "0.9"
