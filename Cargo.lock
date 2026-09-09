@@ -1633,6 +1633,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "raster-ui"
+version = "0.0.0"
+dependencies = [
+ "raster-core",
+ "raster-input",
+ "raster-math",
+]
+
+[[package]]
 name = "raw-window-handle"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -23,6 +23,9 @@ pub struct Input {
 
     mouse_position: Vec2,
     mouse_delta: Vec2,
+    /// Les caracteres saisis cette frame, disposition clavier appliquee : une
+    /// touche physique ne dit pas quelle lettre elle produit.
+    typed: String,
     scroll_delta: f32,
 
     /// Duree pendant laquelle une pression reste consommable.
@@ -52,6 +55,7 @@ impl Input {
             pressed_at: HashMap::new(),
             mouse_position: Vec2::ZERO,
             mouse_delta: Vec2::ZERO,
+            typed: String::new(),
             scroll_delta: 0.0,
             buffer_window: Self::DEFAULT_BUFFER,
         }
@@ -135,6 +139,24 @@ impl Input {
         self.mouse_position
     }
 
+    /// The characters typed this frame, in order.
+    ///
+    /// Ce qu'un champ de saisie consomme : les touches physiques ne disent pas
+    /// quelle lettre une disposition produit.
+    #[must_use]
+    pub fn typed(&self) -> &str {
+        &self.typed
+    }
+
+    /// Records a typed character. Called by the window layer.
+    pub fn type_char(&mut self, c: char) {
+        // Les caracteres de controle arrivent aussi : seul le texte compte, la
+        // suppression et la validation passent par les touches.
+        if !c.is_control() {
+            self.typed.push(c);
+        }
+    }
+
     #[must_use]
     pub fn mouse_delta(&self) -> Vec2 {
         self.mouse_delta
@@ -193,6 +215,7 @@ impl Input {
     pub fn begin_frame(&mut self, dt: f32) {
         std::mem::swap(&mut self.previous, &mut self.current);
         self.current.clear();
+        self.typed.clear();
 
         for key in &self.keys {
             self.current.insert(Binding::Key(*key));
