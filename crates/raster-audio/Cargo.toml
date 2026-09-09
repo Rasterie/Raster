@@ -11,3 +11,4 @@ authors.workspace = true
 [dependencies]
 raster-core = { path = "../raster-core" }
 raster-math = { path = "../raster-math" }
+cpal = "0.18"
