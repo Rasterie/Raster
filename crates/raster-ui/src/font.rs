@@ -1,8 +1,8 @@
-/// La police integree : 5x7 pixels par glyphe, ASCII 32 a 126.
-///
-/// Definie en code plutot que chargee : une police qui ne peut ni manquer ni
-/// echouer a se decoder est le plancher sur lequel tout le reste s'appuie.
-/// Voir `docs/decisions/019-bitmap-fonts.md`.
+//! La police integree : 5x7 pixels par glyphe, ASCII 32 a 126.
+//!
+//! Definie en code plutot que chargee : une police qui ne peut ni manquer ni
+//! echouer a se decoder est le plancher sur lequel tout le reste s'appuie.
+//! Voir `docs/decisions/019-bitmap-fonts.md`.
 
 /// La largeur d'un glyphe, en pixels.
 pub const GLYPH_WIDTH: u32 = 5;
