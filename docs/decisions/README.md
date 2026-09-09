@@ -50,3 +50,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [013](013-actor-storage.md) | Actor storage: typed pools, decided by measurement | Accepted |
 | [014](014-component-index.md) | The component index: a typed path beside reflection | Accepted |
 | [015](015-asset-identity.md) | Asset identity: the path, not a uuid | Accepted |
+| [016](016-hot-reload-polling.md) | Hot reload: polling, not filesystem events | Accepted |
