@@ -41,9 +41,12 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+      # `rust-toolchain.toml` epingle la version : c'est elle que cargo
+      # utilisera, donc c'est a elle qu'il faut ajouter la cible. La demander a
+      # `stable` installerait la bibliotheque standard sur la mauvaise
+      # toolchain, et la compilation croisee echouerait sur `core` introuvable.
+      - name: Installe la cible
+        run: rustup target add ${{ matrix.target }}
 
       - uses: Swatinem/rust-cache@v2
         with:
