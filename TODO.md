@@ -262,8 +262,8 @@ Enough engine for a real, if small, game.
 ## M2.4 Audio
 
 - [x] `raster-audio` crate — mix, voices, buses (Resonance stays the synthesis side)
-- [ ] Audio thread, lock-free command queue
-- [ ] **No allocation, no locks, no I/O on the audio thread** — an underrun is an
+- [x] Audio thread, lock-free ring buffer (decision 017)
+- [x] **No allocation, no locks, no I/O on the audio thread** — an underrun is an
   audible click
 - [ ] `Cue` asset (runtime side; the graph editor is M7)
 - [x] Voice management and a stealing policy when voices run out
