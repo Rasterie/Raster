@@ -774,6 +774,7 @@ dependencies = [
  "raster-math",
  "raster-physics",
  "raster-render",
+ "raster-ui",
 ]
 
 [[package]]
@@ -1639,6 +1640,7 @@ dependencies = [
  "raster-core",
  "raster-input",
  "raster-math",
+ "raster-render",
 ]
 
 [[package]]
