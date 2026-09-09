@@ -236,17 +236,18 @@ Enough engine for a real, if small, game.
 
 ## M2.2 Physics
 
-- [ ] `Body` component — static, kinematic, dynamic
-- [ ] AABB overlap and resolution
-- [ ] **Tile collision** — specialised against the grid, the dominant case
-- [ ] Swept collision so fast projectiles do not tunnel
+- [x] `Body` — an AABB with a velocity
+- [x] AABB overlap and resolution, axis by axis
+- [x] **Tile collision** — specialised against the grid
+- [x] Sub-stepping so fast bodies do not tunnel
+- [x] One-way platforms, with drop-through
+- [x] `Contacts` — grounded, on-wall, per-side
+- [x] `tests/` — tunnelling, one-way edges, narrow corridors, no sinking
 - [ ] Slopes
-- [ ] One-way platforms
 - [ ] Layers and masks
 - [ ] Triggers (overlap without response)
-- [ ] Queries — raycast, shape cast, overlap
-- [ ] `on_collide` dispatch
-- [ ] `tests/` — tunnelling, corner cases, slope transitions, one-way edges
+- [ ] Queries — raycast, shape cast
+- [ ] `on_collide` dispatch — needs `Ctx`
 
 ## M2.3 Animation
 
