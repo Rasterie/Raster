@@ -340,7 +340,7 @@ files, and that is deliberate — it proves the runtime stands on its own.
 - [ ] Music
 - [x] A title screen and a pause menu (sprites, no text until M4)
 - [x] Win and loss conditions
-- [ ] Ship a build for macOS and one other platform
+- [x] Ship a build for macOS, Linux and Windows — release v0.1.0
 - [x] **Write down every friction encountered** — `docs/friction.md`
 
 **M3 done when:** someone who is not you can download it, play it, and finish it.
