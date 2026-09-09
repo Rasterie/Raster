@@ -125,6 +125,15 @@ impl Texture {
         Ok(Self::from_image(gpu, layout, &crate::Image::load(path)?))
     }
 
+    /// A single white pixel, stretched and tinted to draw solid rectangles.
+    ///
+    /// Ce dont l'interface a besoin partout : un fond, une barre de vie, un
+    /// pixel de lettre. Sans elle chaque jeu la refabrique.
+    #[must_use]
+    pub fn white(gpu: &Gpu, layout: &wgpu::BindGroupLayout) -> Self {
+        Self::from_rgba(gpu, layout, &[255, 255, 255, 255], 1, 1)
+    }
+
     /// Le damier magenta d'une texture manquante : voyant a dessein.
     #[must_use]
     pub fn placeholder(gpu: &Gpu, layout: &wgpu::BindGroupLayout) -> Self {
