@@ -329,20 +329,19 @@ shipped a game is a hypothesis, not a tool.
 No editor exists yet. The game is built by writing Rust and hand-editing scene
 files, and that is deliberate — it proves the runtime stands on its own.
 
-- [ ] `[?]` Pick the game. Small and finishable. A single-screen platformer or a
-  tiny mining/building loop — **not** the full Terraria-like
-- [ ] Player controller that feels good (this is where buffering and coyote time
-  earn their place)
-- [ ] Two or three enemy types with distinct behaviour
-- [ ] Collision, damage, death, respawn
-- [ ] A basic inventory
-- [ ] Tile placing and breaking
-- [ ] Save and load of world state (distinct from scenes — runtime state)
-- [ ] Sound effects and music
-- [ ] A title screen and a pause menu (immediate-mode stopgap; `raster-ui` is M4)
-- [ ] Win or loss condition
+- [x] Pick the game — a single-screen platformer (decision 018)
+- [x] Player controller — run, jump, wall and platform collision
+- [x] Three enemy types: walker, spike, flyer
+- [x] Collision, damage, death, respawn
+- [ ] A basic inventory — dropped from M3 with the mining loop (decision 018)
+- [ ] Tile placing and breaking — same
+- [x] Save and load of progress (distinct from scenes — runtime state)
+- [x] Sound effects
+- [ ] Music
+- [x] A title screen and a pause menu (sprites, no text until M4)
+- [x] Win and loss conditions
 - [ ] Ship a build for macOS and one other platform
-- [ ] **Write down every friction encountered.** This list is the input to M4–M8
+- [x] **Write down every friction encountered** — `docs/friction.md`
 
 **M3 done when:** someone who is not you can download it, play it, and finish it.
 
