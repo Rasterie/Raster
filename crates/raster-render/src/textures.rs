@@ -1,5 +1,5 @@
 use crate::{Gpu, Texture};
-use raster_core::asset::{AssetError, AssetId, AssetStore, Handle, Project};
+use raster_core::asset::{AssetError, AssetId, AssetStore, Handle, Project, Watcher};
 
 /// Textures loaded from a project, each one uploaded once.
 ///
@@ -10,6 +10,7 @@ pub struct Textures {
     project: Project,
     placeholder: Handle<Texture>,
     missing: Vec<AssetId>,
+    watcher: Watcher,
 }
 
 impl Textures {
@@ -26,6 +27,7 @@ impl Textures {
             project,
             placeholder,
             missing: Vec::new(),
+            watcher: Watcher::new(),
         }
     }
 
@@ -39,23 +41,81 @@ impl Textures {
         layout: &wgpu::BindGroupLayout,
         id: &AssetId,
     ) -> Handle<Texture> {
-        let project = &self.project;
-        let result = self.store.load_with(id, |id| {
-            let bytes = project.read(id)?;
-            let image = crate::Image::decode(std::io::Cursor::new(bytes))
-                .map_err(|source| TextureError::Decode { source })?;
-            Ok::<_, TextureError>(Texture::from_image(gpu, layout, &image))
-        });
+        if let Some(handle) = self.store.handle(id) {
+            return handle;
+        }
 
-        match result {
-            Ok(handle) => handle,
+        self.watcher.watch(&self.project, id);
+
+        match self.decode(gpu, layout, id) {
+            Ok(texture) => self.store.insert(id.clone(), texture),
             Err(e) => {
-                if !self.missing.contains(id) {
-                    eprintln!("{e} — texture de remplacement");
-                    self.missing.push(id.clone());
-                }
-                self.placeholder
+                self.report(id, &e);
+                // Une entree propre a l'asset, garnie du damier : le handle
+                // rendu ici doit rester valide pour que le fichier, une fois
+                // apparu, remplace la texture sous les yeux du jeu.
+                self.store
+                    .insert(id.clone(), Texture::placeholder(gpu, layout))
             }
+        }
+    }
+
+    /// Reloads the textures whose files changed, returning what was reloaded.
+    ///
+    /// A appeler a chaque frame : le scrutage s'espace de lui-meme.
+    pub fn reload_changed(&mut self, gpu: &Gpu, layout: &wgpu::BindGroupLayout) -> Vec<AssetId> {
+        let changed = self.watcher.changed(&self.project);
+        self.reload(gpu, layout, &changed)
+    }
+
+    /// Reloads the named textures now, whatever the sweep interval says.
+    pub fn reload(
+        &mut self,
+        gpu: &Gpu,
+        layout: &wgpu::BindGroupLayout,
+        ids: &[AssetId],
+    ) -> Vec<AssetId> {
+        let mut reloaded = Vec::new();
+
+        for id in ids {
+            match self.decode(gpu, layout, id) {
+                Ok(texture) => {
+                    self.store.insert(id.clone(), texture);
+                    // Un asset repare cesse d'etre manquant, et un prochain
+                    // echec sera signale a nouveau.
+                    self.missing.retain(|m| m != id);
+                    reloaded.push(id.clone());
+                }
+                Err(e) => self.report(id, &e),
+            }
+        }
+
+        reloaded
+    }
+
+    /// The interval between sweeps.
+    pub fn set_watch_interval(&mut self, interval: std::time::Duration) {
+        self.watcher.set_interval(interval);
+    }
+
+    fn decode(
+        &self,
+        gpu: &Gpu,
+        layout: &wgpu::BindGroupLayout,
+        id: &AssetId,
+    ) -> Result<Texture, TextureError> {
+        let bytes = self.project.read(id)?;
+        let image = crate::Image::decode(std::io::Cursor::new(bytes))
+            .map_err(|source| TextureError::Decode { source })?;
+        Ok(Texture::from_image(gpu, layout, &image))
+    }
+
+    /// Signale un asset une fois : dans une boucle de jeu, le signaler a chaque
+    /// frame noierait la console.
+    fn report(&mut self, id: &AssetId, e: &TextureError) {
+        if !self.missing.contains(id) {
+            eprintln!("{e} — texture de remplacement");
+            self.missing.push(id.clone());
         }
     }
 
