@@ -261,19 +261,22 @@ Enough engine for a real, if small, game.
 
 ## M2.4 Audio
 
-- [ ] `raster-audio` crate wrapping `resonance-core`
+- [x] `raster-audio` crate — mix, voices, buses (Resonance stays the synthesis side)
 - [ ] Audio thread, lock-free command queue
 - [ ] **No allocation, no locks, no I/O on the audio thread** — an underrun is an
   audible click
 - [ ] `Cue` asset (runtime side; the graph editor is M7)
-- [ ] Voice management and a stealing policy when voices run out
-- [ ] Buses — Master, Music, SFX, UI, Ambience
-- [ ] Volume, ducking, snapshots
-- [ ] 2D spatialisation — distance attenuation, stereo pan, low-pass by distance
+- [x] Voice management and a stealing policy when voices run out
+- [x] Buses — Master, Music, SFX, UI, Ambience
+- [x] Volume per bus and master
+- [ ] Ducking, snapshots
+- [x] 2D spatialisation — distance attenuation, stereo pan
+- [ ] Low-pass by distance
 - [ ] Listener attached to an actor
-- [ ] WAV and OGG loading
+- [x] WAV loading
+- [ ] OGG loading
 - [ ] `[?]` Per-sample vs per-block evaluation — per-block is far more efficient
-- [ ] `tests/` — headless, no device required
+- [x] `tests/` — headless, no device required
 
 ## M2.5 Assets
 
