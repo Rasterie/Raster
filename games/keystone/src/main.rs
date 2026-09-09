@@ -15,7 +15,7 @@ use raster_render::{
     App, Camera, Colour, Gpu, Layer, RenderTarget, SpriteBatch, SpriteDraw, Texture, TextureLayout,
     WindowConfig,
 };
-use raster_ui::{Align, Painter};
+use raster_ui::{Align, Id, Keys, Painter, Pointer, Theme, Ui, widgets};
 
 const WIDTH: u32 = 320;
 const HEIGHT: u32 = 176;
@@ -40,6 +40,13 @@ struct Keystone {
     output: Option<Output>,
     scratch: Vec<f32>,
     sounds: Vec<raster_core::asset::Handle<Sound>>,
+    ui: Ui,
+    /// Les commandes d'interface lues cette frame, appliquees au dessin : un
+    /// menu decide au moment ou il se dessine, pas avant.
+    ui_keys: Keys,
+    pointer: Pointer,
+    /// La taille de la fenetre, pour convertir la position de la souris.
+    window: Vec2,
     quit: bool,
 }
 
@@ -62,6 +69,10 @@ impl Keystone {
             output: None,
             scratch: Vec::new(),
             sounds: Vec::new(),
+            ui: Ui::new(Theme::dark()),
+            ui_keys: Keys::default(),
+            pointer: Pointer::default(),
+            window: Vec2::new((WIDTH * 3) as f32, (HEIGHT * 3) as f32),
             quit: false,
         }
     }
@@ -141,6 +152,17 @@ impl App for Keystone {
     fn update(&mut self, input: &mut Input, _time: &raster_core::Time) {
         let confirm = input.pressed(&Action::JUMP) || input.pressed(&Action::INTERACT);
 
+        // Le clic gauche est lie a ATTACK par defaut : c'est le pointeur du
+        // menu, converti de la fenetre vers les pixels du jeu.
+        self.pointer = Pointer {
+            at: self
+                .camera
+                .screen_to_world(input.mouse_position(), self.window),
+            down: input.held(&Action::ATTACK),
+            pressed: input.pressed(&Action::ATTACK),
+            released: input.released(&Action::ATTACK),
+        };
+
         match self.game.screen {
             Screen::Title => {
                 if confirm {
@@ -159,9 +181,16 @@ impl App for Keystone {
                 }
             }
             Screen::Paused => {
-                if input.pressed(&Action::PAUSE) || confirm {
+                if input.pressed(&Action::PAUSE) {
                     self.game.screen = Screen::Playing;
                 }
+                let axe = input.axis(&Axis::VERTICAL);
+                self.ui_keys = Keys {
+                    next: axe > 0.0,
+                    previous: axe < 0.0,
+                    confirm,
+                    ..Keys::default()
+                };
             }
             Screen::Dead => {
                 if confirm {
@@ -212,13 +241,18 @@ impl App for Keystone {
             draw_hud(batch, &painter, game);
 
             match game.screen {
-                Screen::Paused => banner(
-                    batch,
-                    &painter,
-                    "PAUSE",
-                    "Echap pour reprendre",
-                    Colour::rgb(0.72, 0.80, 1.0),
-                ),
+                Screen::Paused => {
+                    if let Some(choix) =
+                        pause_menu(&mut self.ui, batch, &painter, self.ui_keys, self.pointer)
+                    {
+                        match choix {
+                            Menu::Resume => self.game.screen = Screen::Playing,
+                            Menu::Restart => self.game.respawn(),
+                            Menu::Quit => self.quit = true,
+                        }
+                    }
+                    self.ui_keys = Keys::default();
+                }
                 Screen::Dead => banner(
                     batch,
                     &painter,
@@ -242,6 +276,10 @@ impl App for Keystone {
         let (w, h) = gpu.size();
         target.present(&mut frame, Vec2::new(w as f32, h as f32));
         gpu.end_frame(frame);
+    }
+
+    fn resized(&mut self, width: u32, height: u32) {
+        self.window = Vec2::new(width as f32, height as f32);
     }
 
     fn should_exit(&self) -> bool {
@@ -312,6 +350,82 @@ fn draw_hearts(batch: &mut SpriteBatch, game: &Game) {
             },
         );
     }
+}
+
+/// Ce que le menu de pause peut declencher.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Menu {
+    Resume,
+    Restart,
+    Quit,
+}
+
+/// Le menu de pause, navigable au clavier comme a la souris.
+fn pause_menu(
+    ui: &mut Ui,
+    batch: &mut SpriteBatch,
+    painter: &Painter,
+    keys: Keys,
+    pointer: Pointer,
+) -> Option<Menu> {
+    use raster_ui::layout::{self, Axis, Size};
+
+    ui.begin(pointer, keys);
+
+    painter.rect(
+        batch,
+        Rect::new(0.0, 0.0, WIDTH as f32, HEIGHT as f32),
+        Colour::rgba(0.02, 0.02, 0.04, 0.76),
+    );
+
+    let cadre = layout::centre(
+        Rect::new(0.0, 0.0, WIDTH as f32, HEIGHT as f32),
+        Vec2::new(140.0, 96.0),
+    );
+    let interieur = widgets::panel(ui, batch, painter, cadre);
+
+    painter.scaled(2.0).text(
+        batch,
+        Vec2::new(
+            cadre.position.x + cadre.size.x / 2.0,
+            interieur.position.y + 4.0,
+        ),
+        "PAUSE",
+        Align::Centre,
+        Colour::rgb(0.72, 0.80, 1.0),
+    );
+
+    let lignes = layout::stack(
+        layout::inset(interieur, 8.0),
+        Axis::Vertical,
+        6.0,
+        &[
+            Size::Fixed(24.0),
+            Size::Fixed(16.0),
+            Size::Fixed(16.0),
+            Size::Fixed(16.0),
+        ],
+    );
+
+    let menu = Id::new("pause");
+    let mut choix = None;
+
+    for (i, (etiquette, action)) in [
+        ("Reprendre", Menu::Resume),
+        ("Recommencer", Menu::Restart),
+        ("Quitter", Menu::Quit),
+    ]
+    .iter()
+    .enumerate()
+    {
+        let bouton = widgets::button(ui, batch, painter, menu.index(i), lignes[i + 1], etiquette);
+        if bouton.clicked {
+            choix = Some(*action);
+        }
+    }
+
+    ui.end();
+    choix
 }
 
 /// Le nom de la salle et les clefs, en haut de l'ecran.
