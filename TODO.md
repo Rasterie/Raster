@@ -251,12 +251,13 @@ Enough engine for a real, if small, game.
 
 ## M2.3 Animation
 
-- [ ] `Animation` asset — frames with per-frame duration
-- [ ] `Animator` component — play, loop, speed, stop
-- [ ] **Events on frames** — a footstep on frame 3, a hitbox on frame 5
-- [ ] State machine — states, transitions, conditions
+- [x] `Animation` — frames with per-frame duration, loop / once / ping-pong
+- [x] `Animator` — play, speed, restart, catches up on a long step
+- [x] **Events on frames** — a footstep on frame 3, a hitbox on frame 5
+- [x] State machine — states, transitions, conditions, deferred transitions
 - [ ] Crossfade between states
 - [ ] Property animation over reflected fields, using curves
+- [ ] `Animation` as an asset rather than built in code
 
 ## M2.4 Audio
 
