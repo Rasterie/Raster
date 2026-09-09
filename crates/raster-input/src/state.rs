@@ -139,7 +139,6 @@ impl Input {
         self.mouse_position
     }
 
-    #[must_use]
     /// The characters typed this frame, in order.
     ///
     /// Ce qu'un champ de saisie consomme : les touches physiques ne disent pas
