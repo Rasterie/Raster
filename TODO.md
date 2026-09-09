@@ -646,7 +646,9 @@ Structure, per `docs/decisions/010-testing-layout.md`:
 
 - [ ] Keep building a real game against the engine, continuously
 - [ ] Every friction becomes an issue
-- [ ] The Terraria-like remains the long-term target that justifies the design
+- [ ] The Terraria-like remains the long-term target the engine is *sized*
+  against — a yardstick for whether it holds up, never a reason to specialise
+  the engine towards one game
 
 ---
 

@@ -52,7 +52,7 @@ Structure:
 - **Cameras** — orthographic, multiple, with viewports and per-camera layer masks
 - **2D lighting** — normal maps, coloured lights, shadow casting from tiles.
   Optional, since many pixel art games want flat unlit rendering, but essential
-  for a Terraria-like's caves
+  for anything underground
 - **Post-processing** — a small chain: colour grading, screen shake, transitions,
   CRT-style effects for those who want them
 
@@ -91,7 +91,7 @@ and a blue slime) cost nothing.
 
 ## Tilemaps
 
-The structural centre of a Terraria-like, and the reason tiles are emphatically
+The structural centre of a tile-based game, and the reason tiles are emphatically
 not actors.
 
 - **Chunked storage.** The world is divided into fixed chunks, stored as compact
@@ -100,8 +100,8 @@ not actors.
 - **Autotiling** — 47-variant bitmask, computed on edit and cached
 - **Per-tile data** — collision shape, one-way flag, material, damage
 - **Streaming** — chunks generate, load and evict as the camera moves
-- **Runtime mutation** — a Terraria-like changes tiles constantly, so edits must
-  be cheap: only the affected chunk's mesh and autotile neighbourhood rebuild
+- **Runtime mutation** — a game where the world is dug or built changes tiles
+  constantly, so edits must be cheap: only the affected chunk's mesh and autotile neighbourhood rebuild
 
 Only tiles with behaviour — a chest, a machine, a sign — get an associated actor,
 linked by tile coordinate.
@@ -147,8 +147,8 @@ set of composable effects.
 
 ## Open questions
 
-- Whether 2D lighting is in from the start or added later. A Terraria-like needs
-  it, but it complicates the renderer considerably.
+- Whether 2D lighting is in from the start or added later. Anything with caves
+  or night needs it, but it complicates the renderer considerably.
 - The tilemap chunk format, and whether it is an asset or a save-file concern
 - Whether `raster-ui` can genuinely serve both game UI and the editor, or whether
   the editor needs its own toolkit

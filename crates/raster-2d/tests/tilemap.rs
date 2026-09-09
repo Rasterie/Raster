@@ -331,8 +331,8 @@ fn un_type_se_retrouve_par_son_nom() {
 
 // --- echelle --------------------------------------------------------------------
 
-/// Un monde a la Terraria compte des millions de tuiles : le stockage doit
-/// tenir, et une tuile ne doit pas couter plus que quelques octets.
+/// Un grand monde compte des millions de tuiles : le stockage doit tenir, et
+/// une tuile ne doit pas couter plus que quelques octets.
 #[test]
 fn un_grand_monde_tient_en_memoire() {
     let mut map = carte();

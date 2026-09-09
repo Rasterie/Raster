@@ -99,9 +99,14 @@ from a DAW. You open the asset, you edit it, it is already in the game.
 
 ## Who it is for
 
-For now: for me, to build 2D games with — a Terraria-like is the reference
-target, because a large persistent tile world with inventory, lighting and
-simulation stresses nearly every subsystem.
+For now: for me, to build 2D games with.
+
+One caveat about what follows. The roadmap names a Terraria-like as its
+reference target, and that is a *sizing* choice rather than a design goal: a
+large persistent tile world with inventory, lighting and simulation stresses
+nearly every subsystem at once, which makes it a good yardstick for whether the
+engine holds up. The engine itself is general — nothing in it assumes that kind
+of game, and none of it should.
 
 Later: open source, for anyone who wants an engine built for 2D from the ground
 up, with an actor model where an entity is a type in a file.

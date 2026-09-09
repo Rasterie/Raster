@@ -17,8 +17,8 @@ fn exclusive_index(edge: f32) -> i32 {
 /// A world of tiles, unbounded in every direction.
 ///
 /// Chunks exist only where something was placed, so an empty world costs
-/// nothing and a player can walk as far as they like. This is what a
-/// Terraria-like needs and what a fixed-size grid cannot give.
+/// nothing and a player can walk as far as they like — which a fixed-size grid
+/// cannot offer.
 #[derive(Debug)]
 pub struct Tilemap {
     chunks: HashMap<IVec2, Chunk>,

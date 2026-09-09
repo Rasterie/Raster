@@ -156,9 +156,11 @@ See [architecture/scripting.md](architecture/scripting.md) for why this is last.
 A real game is built continuously against the engine, not at the end. It is the
 only honest test of whether any of this works.
 
-Reference target: a Terraria-like. A large persistent tile world with inventory,
-lighting, simulation and save files stresses nearly every subsystem, and its
-requirements are already reflected throughout these documents.
+Reference target: a Terraria-like — chosen as a yardstick, not as the engine's
+purpose. A large persistent tile world with inventory, lighting, simulation and
+save files stresses nearly every subsystem at once, which is what makes it
+useful for sizing. The engine stays general: if a subsystem only makes sense for
+that one game, it does not belong in the engine.
 
 ## What would make this fail
 
