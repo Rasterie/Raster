@@ -359,8 +359,10 @@ files, and that is deliberate — it proves the runtime stands on its own.
 - [ ] `[?]` Vector font support later, or never
 - [x] Theme tokens — colour and spacing, centralised in one place
 - [x] Widgets: text, button, checkbox, slider, panel, progress, radio, text
-  input, list, tabs, modal
-- [ ] Remaining: scroll area, split, tree, menu, tooltip
+  input, list, tabs, modal, scroll area, splitter, drag value, dropdown, tooltip
+- [x] Scissor clipping in `raster-render`, which the scroll area needs
+- [x] Mouse wheel and drag-and-drop routing
+- [ ] Remaining: tree widget
 - [ ] Animation and transitions using `raw_delta`
 - [ ] `.widget` asset loading (the designer is M8)
 - [x] Rebuild the M3 game's HUD and menus with it
