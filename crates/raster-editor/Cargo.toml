@@ -15,3 +15,6 @@ raster-input = { path = "../raster-input" }
 raster-render = { path = "../raster-render" }
 raster-ui = { path = "../raster-ui" }
 toml = "0.9"
+
+[dev-dependencies]
+raster-core = { path = "../raster-core" }
