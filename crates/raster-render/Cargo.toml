@@ -12,6 +12,7 @@ authors.workspace = true
 raster-math = { path = "../raster-math" }
 raster-input = { path = "../raster-input" }
 raster-core = { path = "../raster-core" }
+raster-2d = { path = "../raster-2d" }
 wgpu = "30"
 winit = "0.30"
 pollster = "1"
