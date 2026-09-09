@@ -358,12 +358,12 @@ files, and that is deliberate — it proves the runtime stands on its own.
 - [ ] Loadable fonts as an asset type
 - [ ] `[?]` Vector font support later, or never
 - [x] Theme tokens — colour and spacing, centralised in one place
-- [x] Widgets so far: text, button, checkbox, slider, panel, progress
-- [ ] Remaining widgets: radio, text input, list, scroll area, split, tabs,
-  tree, menu, tooltip, modal
+- [x] Widgets: text, button, checkbox, slider, panel, progress, radio, text
+  input, list, tabs, modal
+- [ ] Remaining: scroll area, split, tree, menu, tooltip
 - [ ] Animation and transitions using `raw_delta`
 - [ ] `.widget` asset loading (the designer is M8)
-- [ ] Rebuild the M3 game's HUD and menus with it
+- [x] Rebuild the M3 game's HUD and menus with it
 
 **M4 done when:** the MVP's UI is built with `raster-ui`.
 
