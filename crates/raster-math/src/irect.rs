@@ -118,7 +118,27 @@ impl IRect {
             && self.bottom() > other.top()
     }
 
+    /// The smallest integer rectangle containing a float one.
+    ///
+    /// Englobe plutot que tronque : une decoupe qui rogne un demi-pixel
+    /// mangerait le bord de ce qu'elle devait laisser passer.
     #[inline]
+    #[must_use]
+    pub fn from_rect(rect: crate::Rect) -> Self {
+        let left = rect.position.x.floor();
+        let top = rect.position.y.floor();
+        let right = (rect.position.x + rect.size.x).ceil();
+        let bottom = (rect.position.y + rect.size.y).ceil();
+
+        Self {
+            position: IVec2::new(left as i32, top as i32),
+            size: IVec2::new(
+                (right - left).max(0.0) as i32,
+                (bottom - top).max(0.0) as i32,
+            ),
+        }
+    }
+
     #[must_use]
     pub fn intersection(self, other: Self) -> Option<Self> {
         let min = self.min().max(other.min());

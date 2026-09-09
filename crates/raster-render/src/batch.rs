@@ -1,5 +1,6 @@
 use crate::sprite::{Instance, SpriteDraw};
 use crate::{Camera, Frame, Gpu, Texture};
+use raster_math::{IRect, Rect};
 
 /// Draws sprites, grouped so that as few draw calls as possible reach the GPU.
 pub struct SpriteBatch {
@@ -12,7 +13,12 @@ pub struct SpriteBatch {
     instance_capacity: u64,
 
     /// Sprites submitted this frame, paired with the texture that draws them.
-    queued: Vec<(usize, SpriteDraw)>,
+    /// Chaque sprite garde le rectangle de decoupe en vigueur au moment ou il
+    /// a ete pose : la decoupe est un etat de dessin, pas une propriete du
+    /// sprite, et l'ajouter a `SpriteDraw` alourdirait chaque instance.
+    queued: Vec<(usize, SpriteDraw, Option<IRect>)>,
+    /// La decoupe courante, `None` pour dessiner sans limite.
+    clip: Option<IRect>,
     /// Built once per flush and reused, so no allocation happens per frame.
     instances: Vec<Instance>,
 
@@ -156,6 +162,7 @@ impl SpriteBatch {
             instance_buffer,
             instance_capacity: Self::INITIAL_CAPACITY,
             queued: Vec::new(),
+            clip: None,
             instances: Vec::new(),
             stats: Stats::default(),
         }
@@ -171,7 +178,38 @@ impl SpriteBatch {
     ///
     /// `texture` indexes the slice passed to [`SpriteBatch::flush`].
     pub fn draw(&mut self, texture: usize, sprite: SpriteDraw) {
-        self.queued.push((texture, sprite));
+        self.queued.push((texture, sprite, self.clip));
+    }
+
+    /// Limits what the next sprites may cover, in world pixels.
+    ///
+    /// Ce dont un panneau a besoin pour ne pas deborder sur son voisin. La
+    /// decoupe s'intersecte avec celle en cours, sinon un panneau imbrique
+    /// pourrait dessiner hors de son parent.
+    pub fn push_clip(&mut self, area: Rect) -> Option<IRect> {
+        let previous = self.clip;
+        let next = IRect::from_rect(area);
+
+        self.clip = match previous {
+            Some(outer) => outer.intersection(next),
+            None => Some(next),
+        };
+        previous
+    }
+
+    /// Restores what [`SpriteBatch::push_clip`] returned.
+    pub fn pop_clip(&mut self, previous: Option<IRect>) {
+        self.clip = previous;
+    }
+
+    /// Removes any clipping.
+    pub fn clear_clip(&mut self) {
+        self.clip = None;
+    }
+
+    #[must_use]
+    pub fn clip(&self) -> Option<IRect> {
+        self.clip
     }
 
     /// Dessine dans la surface de la frame. Pour un rendu pixel-perfect,
@@ -215,16 +253,23 @@ impl SpriteBatch {
         self.upload_camera(gpu, camera);
 
         // Tri par (couche, texture) : un appel de dessin par groupe.
-        self.queued
-            .sort_by_key(|(texture, sprite)| (sprite.layer, *texture));
+        self.queued.sort_by_key(|(texture, sprite, clip)| {
+            // La decoupe entre dans la cle : deux sprites decoupes
+            // differemment ne peuvent pas partager un appel de dessin.
+            let c = clip.map_or((0, 0, 0, 0), |r| {
+                (r.position.x, r.position.y, r.size.x, r.size.y)
+            });
+            (sprite.layer, c, *texture)
+        });
 
         let visible = camera.visible_area();
         self.instances.clear();
 
-        // Chaque tranche partage une texture : un appel de dessin par tranche.
-        let mut runs: Vec<(usize, u32, u32)> = Vec::new();
+        // Chaque tranche partage une texture et une decoupe : un appel de
+        // dessin par tranche.
+        let mut runs: Vec<(usize, Option<IRect>, u32, u32)> = Vec::new();
 
-        for (texture, sprite) in &self.queued {
+        for (texture, sprite, clip) in &self.queued {
             if !visible.intersects(sprite.bounds()) {
                 self.stats.culled += 1;
                 continue;
@@ -237,10 +282,7 @@ impl SpriteBatch {
             let start = u32::try_from(self.instances.len()).unwrap_or(u32::MAX);
             self.instances.push(Instance::new(sprite, atlas.size()));
 
-            match runs.last_mut() {
-                Some((last_texture, _, count)) if *last_texture == *texture => *count += 1,
-                _ => runs.push((*texture, start, 1)),
-            }
+            Self::extend_run(&mut runs, *texture, *clip, start);
         }
 
         self.queued.clear();
@@ -276,14 +318,86 @@ impl SpriteBatch {
         pass.set_bind_group(0, &self.camera_bind_group, &[]);
         pass.set_vertex_buffer(0, self.instance_buffer.slice(..));
 
-        for (texture, start, count) in runs {
+        // La cible fait la resolution de la camera : c'est ainsi qu'une
+        // `RenderTarget` est construite, et le ciseau s'exprime en pixels de
+        // cette cible.
+        let surface = (
+            camera.resolution.x.max(1.0) as u32,
+            camera.resolution.y.max(1.0) as u32,
+        );
+
+        for (texture, clip, start, count) in runs {
             let Some(atlas) = textures.get(texture) else {
                 continue;
             };
+
+            match clip.and_then(|r| Self::scissor(r, camera, surface)) {
+                Some((x, y, w, h)) => pass.set_scissor_rect(x, y, w, h),
+                // Sans decoupe utile, la passe entiere : remettre le ciseau au
+                // plein ecran est necessaire, sinon la tranche precedente
+                // continuerait de limiter celle-ci.
+                None if clip.is_some() => continue,
+                None => pass.set_scissor_rect(0, 0, surface.0, surface.1),
+            }
+
             pass.set_bind_group(1, &atlas.bind_group, &[]);
             // Quatre sommets : le quad vient de l'index, pas d'un tampon.
             pass.draw(0..4, start..start + count);
         }
+    }
+
+    /// Extends the last run, or opens a new one.
+    ///
+    /// Deux sprites ne partagent un appel de dessin que s'ils ont la meme
+    /// texture *et* la meme decoupe : sans le second test, un panneau
+    /// deborderait sur son voisin.
+    pub fn extend_run(
+        runs: &mut Vec<(usize, Option<IRect>, u32, u32)>,
+        texture: usize,
+        clip: Option<IRect>,
+        start: u32,
+    ) {
+        match runs.last_mut() {
+            Some((last_texture, last_clip, _, count))
+                if *last_texture == texture && *last_clip == clip =>
+            {
+                *count += 1;
+            }
+            _ => runs.push((texture, clip, start, 1)),
+        }
+    }
+
+    /// The scissor rectangle a world-space clip maps to, in target pixels.
+    ///
+    /// `None` quand la decoupe ne laisse rien passer : la tranche est alors
+    /// sautee, car un ciseau de taille nulle est refuse par wgpu.
+    #[must_use]
+    pub fn scissor(
+        clip: IRect,
+        camera: Camera,
+        surface: (u32, u32),
+    ) -> Option<(u32, u32, u32, u32)> {
+        let visible = camera.visible_area();
+        let scale = f32::from(u16::try_from(camera.zoom.max(1)).unwrap_or(1));
+
+        // Du monde vers la cible : on retire l'origine de la vue, puis on
+        // applique le zoom.
+        let left = (clip.position.x as f32 - visible.position.x) * scale;
+        let top = (clip.position.y as f32 - visible.position.y) * scale;
+        let right = left + clip.size.x as f32 * scale;
+        let bottom = top + clip.size.y as f32 * scale;
+
+        // Borne a la cible : un ciseau qui deborde est refuse.
+        let x = left.max(0.0).min(surface.0 as f32);
+        let y = top.max(0.0).min(surface.1 as f32);
+        let w = right.min(surface.0 as f32) - x;
+        let h = bottom.min(surface.1 as f32) - y;
+
+        if w <= 0.0 || h <= 0.0 {
+            return None;
+        }
+
+        Some((x as u32, y as u32, w as u32, h as u32))
     }
 
     /// What the last flush cost.
