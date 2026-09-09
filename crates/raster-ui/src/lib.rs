@@ -19,4 +19,7 @@ pub use paint::Painter;
 pub use text::{Align, Placed, layout, measure};
 pub use theme::{State, Theme};
 pub use ui::{Keys, Pointer, Response, Ui};
-pub use widgets::{button, checkbox, label, panel, progress, slider};
+pub use widgets::{
+    button, checkbox, clip_end, edit, label, list, modal, panel, progress, radio, slider, tabs,
+    text_field,
+};

@@ -23,6 +23,8 @@ pub struct Keys {
     pub cancel: bool,
     pub left: bool,
     pub right: bool,
+    /// Efface le caractere precedent.
+    pub backspace: bool,
 }
 
 /// The state a UI keeps between frames.
@@ -48,6 +50,10 @@ pub struct Ui {
     /// Ce qui a ete survole avant, pour ne garder que le dernier — donc le
     /// plus haut dans l'ordre de dessin.
     hover_candidate: Option<Id>,
+    /// Le texte saisi cette frame, consomme par le champ qui a le focus.
+    typed: String,
+    /// L'etat textuel que chaque champ garde.
+    text_memory: HashMap<Id, String>,
 }
 
 impl Ui {
@@ -63,7 +69,32 @@ impl Ui {
             order: Vec::new(),
             memory: HashMap::new(),
             hover_candidate: None,
+            typed: String::new(),
+            text_memory: HashMap::new(),
         }
+    }
+
+    /// The text typed this frame, for whichever field has focus.
+    pub fn set_typed(&mut self, typed: &str) {
+        self.typed.clear();
+        self.typed.push_str(typed);
+    }
+
+    #[must_use]
+    pub fn typed(&self) -> &str {
+        &self.typed
+    }
+
+    /// The text a field remembers.
+    pub fn remember_text(&mut self, id: Id, default: &str) -> String {
+        self.text_memory
+            .entry(id)
+            .or_insert_with(|| default.to_owned())
+            .clone()
+    }
+
+    pub fn store_text(&mut self, id: Id, value: String) {
+        self.text_memory.insert(id, value);
     }
 
     /// Starts a frame with fresh input.
