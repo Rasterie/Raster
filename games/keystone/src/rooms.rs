@@ -4,14 +4,13 @@ use raster_math::Vec2;
 /// Les salles du jeu, dans l'ordre.
 ///
 /// Ecrites en dur plutot qu'en fichiers de scene : une salle est faite de
-/// tuiles, et le format de scene decrit des acteurs. Les acteurs de chaque
-/// salle, eux, viennent bien d'une scene.
+/// tuiles, et le format de scene decrit des acteurs.
 #[must_use]
 pub fn all() -> Vec<Room> {
     vec![first(), second(), third()]
 }
 
-/// Vingt colonnes sur onze lignes : la taille d'un ecran a 320x180.
+/// Vingt colonnes sur onze lignes : la taille d'un ecran a 320x176.
 const WIDTH: usize = 20;
 
 fn spawn(column: usize, row: usize) -> Vec2 {
@@ -19,6 +18,9 @@ fn spawn(column: usize, row: usize) -> Vec2 {
 }
 
 /// Apprend a courir et a sauter, sans rien qui puisse tuer.
+///
+/// Les etages montent de deux lignes a la fois : un saut franchit 2,7 tuiles,
+/// donc chaque marche reste atteignable.
 fn first() -> Room {
     Room {
         name: "Le seuil".to_owned(),
@@ -26,11 +28,11 @@ fn first() -> Room {
             "#..................#".to_owned(),
             "#..................#".to_owned(),
             "#..................#".to_owned(),
-            "#.............===..#".to_owned(),
+            "#..........======..#".to_owned(),
             "#..................#".to_owned(),
-            "#.......===........#".to_owned(),
+            "#.....======.......#".to_owned(),
             "#..................#".to_owned(),
-            "#..===.............#".to_owned(),
+            "#.=====............#".to_owned(),
             "#..................#".to_owned(),
             "#..................#".to_owned(),
             "####################".to_owned(),
@@ -39,7 +41,7 @@ fn first() -> Room {
     }
 }
 
-/// Introduit un ennemi qui marche, et un trou.
+/// Introduit un ennemi qui marche, et un pic a eviter.
 fn second() -> Room {
     Room {
         name: "La faille".to_owned(),
@@ -48,31 +50,31 @@ fn second() -> Room {
             "#..................#".to_owned(),
             "#..................#".to_owned(),
             "#..................#".to_owned(),
-            "#........====......#".to_owned(),
+            "#........=====.....#".to_owned(),
             "#..................#".to_owned(),
             "#..................#".to_owned(),
-            "###................#".to_owned(),
-            "#.#................#".to_owned(),
-            "#.#................#".to_owned(),
+            "#...=====..........#".to_owned(),
+            "#..................#".to_owned(),
+            "#..................#".to_owned(),
             "####################".to_owned(),
         ],
-        spawn: spawn(1, 6),
+        spawn: spawn(1, 9),
     }
 }
 
-/// Demande de sauter sur un ennemi pour atteindre la clef.
+/// Demande de composer avec un voltigeur pour atteindre la clef.
 fn third() -> Room {
     Room {
         name: "La clef de voute".to_owned(),
         tiles: vec![
             "#..................#".to_owned(),
             "#..................#".to_owned(),
-            "#.............====.#".to_owned(),
+            "#..........======..#".to_owned(),
             "#..................#".to_owned(),
-            "#.......====.......#".to_owned(),
+            "#....======........#".to_owned(),
             "#..................#".to_owned(),
-            "#.====.............#".to_owned(),
             "#..................#".to_owned(),
+            "#.=====............#".to_owned(),
             "#..................#".to_owned(),
             "#..................#".to_owned(),
             "####################".to_owned(),

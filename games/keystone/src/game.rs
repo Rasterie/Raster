@@ -399,7 +399,9 @@ fn populate(index: usize, room: &Room) -> (Vec<Foe>, Vec2, Vec2) {
     let at = |c: f32, r: f32| Vec2::new(c * TILE, r * TILE);
 
     match index {
-        0 => (Vec::new(), at(15.0, 2.0), at(17.0, 8.0)),
+        // Salle 0 : la clef repose sur la plateforme haute (ligne 3), la porte
+        // attend au sol. L'escalier de plateformes y mene en trois sauts.
+        0 => (Vec::new(), on_ground(15.0, 3.0), at(17.0, 9.0)),
         1 => (
             vec![
                 walker(on_ground(13.0, 10.0)),
@@ -412,7 +414,8 @@ fn populate(index: usize, room: &Room) -> (Vec<Foe>, Vec2, Vec2) {
                     range: 0.0,
                 },
             ],
-            at(10.0, 3.0),
+            // Sur la plateforme de la ligne 4.
+            on_ground(11.0, 4.0),
             at(17.0, 8.0),
         ),
         _ => (
@@ -427,13 +430,14 @@ fn populate(index: usize, room: &Room) -> (Vec<Foe>, Vec2, Vec2) {
                     range: 3.0 * TILE,
                 },
             ],
-            at(15.0, 1.0),
-            at(1.0, room.height() as f32 - 3.0),
+            // Sur la plateforme haute de la ligne 2.
+            on_ground(15.0, 2.0),
+            at(2.0, room.height() as f32 - 3.0),
         ),
     }
 }
 
-/// Pose un ennemi de 14 px de haut sur le dessus de la ligne `row`.
+/// Pose une boite de 14 px de haut sur le dessus de la ligne `row`.
 fn on_ground(column: f32, row: f32) -> Vec2 {
     Vec2::new(column * TILE, row * TILE - 14.0)
 }
