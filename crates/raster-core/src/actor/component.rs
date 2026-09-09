@@ -1,21 +1,13 @@
-/// A type an actor holds as a field, and that a subsystem needs to reach
-/// without knowing the actor.
+/// Un type qu'un acteur detient et qu'un sous-systeme doit atteindre sans
+/// connaitre l'acteur.
 ///
-/// The renderer must draw every `Sprite` without knowing that `Player` exists.
-/// Reflection can *find* those fields — `ValueKind::Struct("Sprite")` says
-/// which types hold one — but reading one back yields an owned `Value`, an
-/// allocated map per actor per frame. That is fine for an inspector and far too
-/// slow for a render loop.
-///
-/// This trait is the fast path: a direct borrow, no allocation, resolved at
-/// compile time.
+/// La reflexion sait les *trouver*, mais en rend une `Value` allouee par acteur
+/// et par frame. Ce trait est le chemin rapide : un emprunt direct.
 pub trait Component: 'static {}
 
-/// Implemented by `#[derive(Reflect)]` for every field whose type is a
-/// [`Component`], once per (actor, component type) pair.
+/// Emis par `#[derive(Reflect)]`, une fois par couple (acteur, composant).
 ///
-/// An actor holding two sprites implements this once and returns both, which is
-/// why the methods yield slices rather than a single reference.
+/// Rend un iterateur : un acteur peut porter deux sprites.
 pub trait HasComponent<C: Component> {
     /// Every `C` this actor holds, in field order.
     fn components(&self) -> impl Iterator<Item = &C>;

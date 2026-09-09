@@ -4,10 +4,8 @@ use std::collections::{HashMap, HashSet};
 
 /// Everything the game knows about input this frame.
 ///
-/// Two conveniences are built in rather than left to gameplay code, because
-/// every action game reimplements them and usually badly: input buffering and
-/// coyote time. Together they are most of the difference between controls that
-/// feel responsive and controls that feel broken.
+/// La memorisation des pressions et le coyote time sont fournis ici : tout jeu
+/// d'action les reimplemente, en general mal.
 #[derive(Debug)]
 pub struct Input {
     bindings: Bindings,
@@ -27,7 +25,7 @@ pub struct Input {
     mouse_delta: Vec2,
     scroll_delta: f32,
 
-    /// How long a press stays available to be consumed.
+    /// Duree pendant laquelle une pression reste consommable.
     buffer_window: f32,
 }
 
@@ -38,11 +36,8 @@ impl Default for Input {
 }
 
 impl Input {
-    /// The default buffer window.
-    ///
-    /// Roughly seven frames at 60fps: long enough that a jump pressed just
-    /// before landing still fires, short enough that a stale press does not
-    /// surprise the player later.
+    /// Environ sept frames a 60 images/s : assez pour qu'un saut demande juste
+    /// avant l'atterrissage parte, trop court pour surprendre plus tard.
     pub const DEFAULT_BUFFER: f32 = 0.12;
 
     #[must_use]
@@ -102,10 +97,7 @@ impl Input {
             && !bindings.iter().any(|b| self.current.contains(b))
     }
 
-    /// Whether an action was pressed within the buffer window.
-    ///
-    /// This is what lets a jump pressed a few frames before landing still
-    /// fire. Reading it does not consume it — see
+    /// Si l'action a ete pressee dans la fenetre. Lire ne consomme pas — voir
     /// [`Input::consume_buffered`].
     #[must_use]
     pub fn buffered(&self, action: &Action) -> bool {
@@ -114,10 +106,7 @@ impl Input {
             .is_some_and(|age| *age <= self.buffer_window)
     }
 
-    /// Takes a buffered press, so it cannot fire twice.
-    ///
-    /// A jump that consumed its buffered press must not jump again on the next
-    /// frame from the same press.
+    /// Consomme une pression memorisee, pour qu'elle ne parte qu'une fois.
     pub fn consume_buffered(&mut self, action: &Action) -> bool {
         if self.buffered(action) {
             self.pressed_at.remove(action);
@@ -134,10 +123,8 @@ impl Input {
         positive - negative
     }
 
-    /// Two axes as a direction, normalised so diagonal movement is not faster.
-    ///
-    /// Holding right and down without this would move 41% faster than holding
-    /// right alone, which is the classic bug.
+    /// Deux axes en direction, normalisee : sans cela la diagonale irait 41 %
+    /// plus vite.
     #[must_use]
     pub fn direction(&self) -> Vec2 {
         Vec2::new(self.axis(&Axis::HORIZONTAL), self.axis(&Axis::VERTICAL)).normalized()
@@ -193,11 +180,8 @@ impl Input {
         self.scroll_delta += delta;
     }
 
-    /// Clears every held input.
-    ///
-    /// Called when the window loses focus: without it, a key held while
-    /// alt-tabbing stays held forever, because the release event goes to
-    /// another window.
+    /// Relache tout, quand la fenetre perd le focus : sinon une touche
+    /// maintenue le reste pour toujours.
     pub fn release_all(&mut self) {
         self.keys.clear();
         self.mouse_buttons.clear();
@@ -220,15 +204,13 @@ impl Input {
             self.current.insert(Binding::GamepadButton(*button));
         }
 
-        // Vieillit les pressions memorisees, et oublie celles trop anciennes
-        // pour que la table ne grandisse pas indefiniment.
+        // Vieillit les pressions et oublie les trop anciennes.
         self.pressed_at.retain(|_, age| {
             *age += dt;
             *age <= self.buffer_window
         });
 
-        // Enregistre les nouvelles pressions. Fait apres le vieillissement,
-        // pour qu'une pression de cette frame ait bien un age nul.
+        // Apres le vieillissement, pour qu'une pression neuve ait un age nul.
         let actions: Vec<Action> = self.bindings.actions().cloned().collect();
         for action in actions {
             if self.pressed(&action) {
@@ -241,12 +223,10 @@ impl Input {
     }
 }
 
-/// Tracks how long ago a condition was last true.
+/// Depuis combien de temps une condition a cesse d'etre vraie.
 ///
-/// The mechanism behind coyote time: a jump pressed shortly after walking off
-/// a ledge should still work. Kept separate from [`Input`] because the
-/// condition is about the world — being on the ground — not about the
-/// keyboard.
+/// Le coyote time : sauter juste apres avoir quitte une plateforme marche
+/// encore. Separe d'[`Input`] car la condition porte sur le monde.
 #[derive(Debug, Clone, Copy)]
 pub struct Grace {
     window: f32,
@@ -254,8 +234,7 @@ pub struct Grace {
 }
 
 impl Grace {
-    /// A window of roughly six frames at 60fps: forgiving enough to feel fair,
-    /// short enough that nobody notices the ground was not there.
+    /// Environ six frames a 60 images/s.
     pub const DEFAULT: f32 = 0.1;
 
     #[must_use]
@@ -276,16 +255,13 @@ impl Grace {
         }
     }
 
-    /// Whether the condition holds, or held recently enough to still count.
+    /// Si la condition tient, ou a tenu assez recemment.
     #[must_use]
     pub fn active(&self) -> bool {
         self.since <= self.window
     }
 
-    /// Ends the grace period, so it cannot be used twice.
-    ///
-    /// A jump that used its coyote time must not jump again from the same
-    /// window.
+    /// Termine le delai, pour qu'il ne serve qu'une fois.
     pub fn consume(&mut self) {
         self.since = f32::INFINITY;
     }

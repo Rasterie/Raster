@@ -1,17 +1,12 @@
 use raster_math::IVec2;
 
-/// Which tile occupies a cell.
-///
-/// Two bytes rather than an enum with data: a large world holds millions of
-/// these, and every byte is multiplied by that. What a tile *means* — its
-/// collision, its texture, whether it can be mined — lives once in the tileset,
-/// not once per cell.
+/// Which tile occupies a cell. Deux octets : ce qu'une tuile signifie vit dans
+/// le tileset, pas dans chaque cellule.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PartialOrd, Ord)]
 pub struct TileId(pub u16);
 
 impl TileId {
-    /// The absence of a tile. Zero so that a freshly allocated chunk is empty
-    /// without having to fill it.
+    /// L'absence de tuile. Zero, pour qu'un chunk neuf soit vide sans travail.
     pub const EMPTY: Self = Self(0);
 
     #[must_use]
@@ -33,13 +28,11 @@ pub enum Collision {
     None,
     /// Blocks from every direction.
     Solid,
-    /// Blocks from above only, so a character can jump up through it and land
-    /// on top. Every platformer needs this and it cannot be expressed as a
-    /// plain solid.
+    /// Ne bloque que par le haut : on traverse en sautant, on atterrit dessus.
     OneWay,
 }
 
-/// What a tile is, held once per kind rather than once per cell.
+/// Ce qu'est une tuile, une fois par type plutot que par cellule.
 #[derive(Debug, Clone)]
 pub struct TileKind {
     pub name: String,
@@ -61,15 +54,11 @@ impl Default for TileKind {
     }
 }
 
-/// Every kind of tile a world can contain.
-///
-/// Indexed by [`TileId`], so a lookup is an array access rather than a hash.
+/// Every kind of tile a world can contain, indexe par [`TileId`].
 #[derive(Debug, Clone, Default)]
 pub struct Tileset {
     kinds: Vec<TileKind>,
-    /// The size of one tile in pixels. Square, because a non-square tile grid
-    /// complicates every calculation downstream for no benefit anyone has asked
-    /// for.
+    /// La taille d'une tuile en pixels, carree.
     tile_size: u32,
 }
 
@@ -84,8 +73,7 @@ impl Tileset {
         assert!(tile_size > 0, "a tile cannot be zero pixels");
 
         Self {
-            // L'emplacement zero est toujours le vide : cela evite un decalage
-            // d'indice partout ailleurs.
+            // L'emplacement zero est toujours le vide.
             kinds: vec![TileKind {
                 name: "empty".to_owned(),
                 ..TileKind::default()
@@ -105,10 +93,7 @@ impl Tileset {
         TileId(id)
     }
 
-    /// What a tile is, or the empty kind for an id this tileset does not know.
-    ///
-    /// Returning the empty kind rather than `None` keeps callers simple: an
-    /// unknown tile behaves as a hole, which is both harmless and visible.
+    /// Ce qu'est une tuile ; un identifiant inconnu se comporte comme un trou.
     #[must_use]
     pub fn kind(&self, id: TileId) -> &TileKind {
         self.kinds.get(id.0 as usize).unwrap_or(&self.kinds[0])
@@ -131,13 +116,11 @@ impl Tileset {
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
-        // L'emplacement zero est toujours present, donc un tileset n'est
-        // « vide » que s'il ne contient que celui-la.
+        // Le vide occupant toujours l'emplacement zero.
         self.kinds.len() <= 1
     }
 
-    /// Finds a kind by name. Linear, and meant for loading rather than for the
-    /// frame loop.
+    /// Cherche un type par nom. Lineaire : pour le chargement, pas la frame.
     #[must_use]
     pub fn find(&self, name: &str) -> Option<TileId> {
         self.kinds

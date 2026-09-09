@@ -10,9 +10,8 @@ use raster_math::{Mat3, Rect, Vec2};
 pub struct Camera {
     /// The point at the centre of the view, in world space.
     ///
-    /// Deliberately not snapped to the pixel grid. Sprites snap; the camera
-    /// does not. Snapping both makes scrolling stutter, snapping neither makes
-    /// it blurry — this pair is the most common thing 2D engines get wrong.
+    /// Volontairement pas accrochee a la grille : les sprites s'accrochent, pas
+    /// la camera. Accrocher les deux fait saccader, aucun rend flou.
     pub position: Vec2,
 
     /// The visible area in pixels, before scaling to the window.
@@ -32,18 +31,13 @@ impl Camera {
         }
     }
 
-    /// The matrix mapping world space to clip space.
-    ///
-    /// Clip space runs from -1 to 1 with Y upwards, while the engine works in
-    /// pixels with Y downwards — hence the negated Y scale.
+    /// La matrice monde -> clip. Le clip monte en Y, le moteur descend, d'ou
+    /// l'echelle negative.
     #[must_use]
     pub fn view_projection(self) -> Mat3 {
         let zoom = self.zoom.max(1) as f32;
         let half = self.resolution * 0.5 / zoom;
 
-        // La camera n'est pas accrochee a la grille, mais la matrice l'est au
-        // demi-pixel pres : sans cela, une resolution impaire decalerait tout
-        // le rendu d'un demi-pixel et brouillerait chaque sprite.
         let offset = self.position;
 
         Mat3::new(
@@ -53,9 +47,7 @@ impl Camera {
         )
     }
 
-    /// The area of the world this camera can see.
-    ///
-    /// The renderer culls against it, so anything outside costs nothing.
+    /// The area of the world this camera can see, used for culling.
     #[must_use]
     pub fn visible_area(self) -> Rect {
         let zoom = self.zoom.max(1) as f32;
@@ -63,17 +55,12 @@ impl Camera {
         Rect::from_center_size(self.position, size)
     }
 
-    /// Converts a point on screen to a point in the world.
-    ///
-    /// `screen` is in window pixels; `window` is the window's size. Used for
-    /// mouse picking.
+    /// Convertit un point de l'ecran en point du monde, bandes comprises.
     #[must_use]
     pub fn screen_to_world(self, screen: Vec2, window: Vec2) -> Vec2 {
         let scale = self.window_scale(window) as f32;
         let zoom = self.zoom.max(1) as f32;
 
-        // Retire le letterboxing avant de convertir, sinon un clic dans les
-        // bandes noires donnerait des coordonnees hors du monde.
         let scaled = self.resolution * scale;
         let margin = (window - scaled) * 0.5;
         let inside = (screen - margin) / scale;
@@ -81,11 +68,8 @@ impl Camera {
         self.position + (inside - self.resolution * 0.5) / zoom
     }
 
-    /// The integer factor by which the low-resolution image is scaled up to
-    /// fill `window`.
-    ///
-    /// Always a whole number: a 3.7× scale makes some pixels wider than others,
-    /// and there is no version of that which looks acceptable.
+    /// Le facteur d'agrandissement, toujours entier : a 3,7 certains pixels
+    /// seraient plus larges que d'autres.
     #[must_use]
     pub fn window_scale(self, window: Vec2) -> u32 {
         let x = (window.x / self.resolution.x).floor() as u32;
@@ -101,11 +85,9 @@ impl Camera {
         Rect::from_position_size(((window - size) * 0.5).floor(), size)
     }
 
-    /// Moves the camera towards `target`, smoothly, in world units per second.
-    ///
-    /// Frame-rate independent: the same motion at 30fps and 240fps. A naive
-    /// `lerp(position, target, 0.1)` per frame is not, and produces a camera
-    /// that follows faster on a better machine.
+    /// Suit `target` en douceur, independamment de la frequence d'images —
+    /// contrairement a un `lerp` par frame, qui suit plus vite sur une
+    /// machine rapide.
     pub fn follow(&mut self, target: Vec2, smoothing: f32, dt: f32) {
         if smoothing <= 0.0 {
             self.position = target;

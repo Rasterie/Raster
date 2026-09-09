@@ -132,11 +132,7 @@ impl App for Jeu {
         self.target = Some(RenderTarget::new(gpu, LARGEUR, HAUTEUR));
         self.tiles = Some(TilemapRenderer::new(0, COLONNES).with_layer(Layer::BACKGROUND));
 
-        /*
-          La vue couvre 320x180 pixels centres sur l'origine, soit les tuiles
-          x de -10 a 10 et y de -6 a 5. La scene tient dans cette zone, avec de
-          quoi deborder pour qu'on ait a se deplacer.
-        */
+        // La vue couvre les tuiles x de -10 a 10 et y de -6 a 5.
         // Le sol, juste sous le bas de la vue initiale.
         self.map.fill(IRect::new(-30, 4, 60, 3), PIERRE);
         // Deux plateformes flottantes.

@@ -10,8 +10,7 @@ pub struct Image {
     pub height: u32,
 }
 
-/// Shows the dimensions rather than the pixels: a debug print of a megabyte of
-/// bytes is unreadable and hides whatever it was meant to reveal.
+/// Affiche les dimensions plutot que les pixels.
 impl fmt::Debug for Image {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Image")
@@ -72,32 +71,24 @@ impl From<png::DecodingError> for ImageError {
 }
 
 impl Image {
-    /// The largest texture the engine will build.
-    ///
-    /// Matches the lowest guaranteed GPU limit. Refusing here gives a clear
-    /// message rather than a validation error from the driver.
+    /// La plus grande texture acceptee, alignee sur la limite GPU garantie.
     pub const MAX_DIMENSION: u32 = 8192;
 
     /// Reads a PNG from disk.
     ///
     /// # Errors
     ///
-    /// Fails if the file cannot be read, is not a PNG, uses a colour format
-    /// the engine does not convert, or has an unusable size.
+    /// Fichier illisible, PNG invalide, format non converti, taille inutilisable.
     pub fn load(path: impl AsRef<Path>) -> Result<Self, ImageError> {
         let file = std::fs::File::open(path)?;
         Self::decode(std::io::BufReader::new(file))
     }
 
-    /// Decodes a PNG from a buffered, seekable source — a file, an embedded
-    /// byte slice, an archive entry.
-    ///
-    /// `Seek` is required by the decoder, which reads chunk headers before
-    /// deciding what to do with them. A `&[u8]` and a `Cursor` both satisfy it.
+    /// Decode un PNG depuis une source tamponnee et repositionnable.
     ///
     /// # Errors
     ///
-    /// As [`Image::load`], minus the file access.
+    /// Comme [`Image::load`], sans l'acces au fichier.
     pub fn decode(source: impl std::io::BufRead + std::io::Seek) -> Result<Self, ImageError> {
         let decoder = png::Decoder::new(source);
         let mut reader = decoder.read_info()?;
@@ -128,11 +119,7 @@ impl Image {
     }
 }
 
-/// Converts decoded pixels to RGBA8.
-///
-/// The GPU takes one format; a PNG may be greyscale, indexed, or RGB. Rather
-/// than a texture format per variant, everything becomes RGBA here — the cost
-/// is paid once at load, not per frame.
+/// Convertit les pixels decodes en RGBA8, une fois au chargement.
 fn to_rgba(
     data: &[u8],
     colour: png::ColorType,
@@ -140,9 +127,7 @@ fn to_rgba(
     width: u32,
     height: u32,
 ) -> Result<Vec<u8>, ImageError> {
-    // Le decodeur convertit deja les profondeurs inferieures a 8 bits et les
-    // palettes en composantes 8 bits ; il ne reste que la disposition des
-    // canaux a uniformiser.
+    // Le decodeur a deja developpe les palettes et les profondeurs faibles.
     if depth != png::BitDepth::Eight && depth != png::BitDepth::Sixteen {
         return Err(ImageError::UnsupportedFormat { colour, depth });
     }
@@ -150,9 +135,7 @@ fn to_rgba(
     let count = (width as usize) * (height as usize);
     let mut rgba = Vec::with_capacity(count * 4);
 
-    // Un PNG 16 bits arrive en octets de poids fort en premier : on ne garde
-    // que celui-la, le pixel art n'ayant aucun usage de la precision
-    // supplementaire.
+    // En 16 bits on ne garde que l'octet de poids fort.
     let stride = if depth == png::BitDepth::Sixteen {
         2
     } else {
@@ -190,8 +173,7 @@ fn to_rgba(
                 rgba.extend_from_slice(&[g, g, g, 255]);
             }
         }
-        // Le decodeur developpe les palettes en RGB ou RGBA : ce cas ne
-        // devrait pas se presenter, mais mieux vaut le dire que le supposer.
+        // Le decodeur developpe les palettes : ce cas ne devrait pas survenir.
         png::ColorType::Indexed => {
             return Err(ImageError::UnsupportedFormat { colour, depth });
         }

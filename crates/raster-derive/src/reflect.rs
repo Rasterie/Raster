@@ -136,12 +136,9 @@ pub fn expand(input: TokenStream) -> syn::Result<TokenStream> {
 
         #(#has_component_impls)*
 
-        /*
-          Un type reflechi doit aussi pouvoir servir de champ a un autre : c'est
-          le cas d'un composant dans un acteur. La lecture reutilise to_value,
-          l'ecriture part du Default puis applique — ce qui laisse aux champs
-          absents leur valeur par defaut au lieu d'echouer.
-        */
+        // Un type reflechi sert aussi de champ a un autre : un composant dans
+        // un acteur. L'ecriture part du Default, laissant aux champs absents
+        // leur valeur plutot que d'echouer.
         impl ::raster_core::reflect::ReflectValue for #name
         where
             Self: ::core::default::Default,
@@ -289,12 +286,8 @@ fn field_info(field: &ReflectedField) -> TokenStream {
     }
 }
 
-/// Une implementation de `HasComponent<C>` par type de composant, regroupant
-/// tous les champs de ce type.
-///
-/// Un acteur peut porter deux sprites — un coffre et son couvercle — d'ou le
-/// regroupement plutot qu'une implementation par champ, qui serait un conflit
-/// de traits.
+/// Une implementation de `HasComponent<C>` par type, regroupant ses champs :
+/// un acteur peut porter deux sprites.
 fn has_component_impls(name: &syn::Ident, fields: &[ReflectedField]) -> Vec<TokenStream> {
     let mut par_type: Vec<(&Type, Vec<&syn::Ident>)> = Vec::new();
 

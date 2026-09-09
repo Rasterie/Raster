@@ -99,10 +99,7 @@ impl App for Jeu {
         let batch = SpriteBatch::new(gpu);
         let layout = batch.texture_layout();
 
-        /*
-          Le damier est genere, le heros est charge depuis un PNG : les deux
-          chemins existent, et un jeu reel utilisera surtout le second.
-        */
+        // Le damier est genere, le heros charge depuis un PNG.
         let heros = match Texture::load(
             gpu,
             layout,

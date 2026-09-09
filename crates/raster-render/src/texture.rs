@@ -9,16 +9,12 @@ pub struct Texture {
 }
 
 impl Texture {
-    /// Uploads RGBA8 pixel data.
-    ///
-    /// `pixels` must hold `width * height * 4` bytes, in row-major order with
-    /// no padding.
+    /// Uploads RGBA8 pixel data, `width * height * 4` octets sans remplissage.
     ///
     /// # Panics
     ///
-    /// If `pixels` is not exactly that length, or either dimension is zero.
-    /// Both are programming errors rather than conditions to recover from: a
-    /// texture built from the wrong data would render garbage silently.
+    /// Si la longueur ou une dimension est fausse : une texture construite sur
+    /// de mauvaises donnees afficherait n'importe quoi sans le dire.
     pub fn from_rgba(
         gpu: &Gpu,
         layout: &wgpu::BindGroupLayout,
@@ -50,12 +46,8 @@ impl Texture {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            /*
-              Srgb : les images sont encodees en sRGB, et sans ce format le GPU
-              les traiterait comme lineaires. Les couleurs sortiraient alors
-              trop claires, d'une maniere que l'on remarque surtout dans les
-              degrades sombres.
-            */
+            // Srgb : sans lui le GPU traiterait l'image comme lineaire et les
+            // couleurs sortiraient trop claires.
             format: wgpu::TextureFormat::Rgba8UnormSrgb,
             usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
             view_formats: &[],
@@ -84,12 +76,8 @@ impl Texture {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            /*
-              Nearest partout, sans exception : c'est la regle qui distingue un
-              moteur fait pour le pixel art d'un moteur qui en accepte. Une
-              interpolation lineaire rendrait chaque sprite flou des la premiere
-              mise a l'echelle.
-            */
+            // Nearest partout : une interpolation lineaire rendrait chaque
+            // sprite flou des la premiere mise a l'echelle.
             mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::MipmapFilterMode::Nearest,
@@ -137,10 +125,7 @@ impl Texture {
         Ok(Self::from_image(gpu, layout, &crate::Image::load(path)?))
     }
 
-    /// A magenta-and-black checkerboard, shown where a texture is missing.
-    ///
-    /// Loud on purpose: a missing asset should be obvious at a glance rather
-    /// than a blank space someone might mistake for a layout problem.
+    /// Le damier magenta d'une texture manquante : voyant a dessein.
     #[must_use]
     pub fn placeholder(gpu: &Gpu, layout: &wgpu::BindGroupLayout) -> Self {
         const SIZE: u32 = 16;

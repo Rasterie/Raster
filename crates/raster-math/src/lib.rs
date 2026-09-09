@@ -10,13 +10,8 @@
 //!   on a shared boundary.
 
 #![forbid(unsafe_code)]
-/*
-  missing_docs reste desactive volontairement : il reclamerait un commentaire
-  sur chaque `abs`, `min` et `to_array`, et la seule chose qu'on pourrait y
-  ecrire paraphraserait le nom. Les methodes documentees ci-dessous sont celles
-  dont le comportement ne se devine pas — convention d'axe, cas degeneres,
-  arrondi.
-*/
+// missing_docs reste desactive : il reclamerait un commentaire sur chaque
+// `abs` et `min`, qui ne ferait que paraphraser le nom.
 
 mod angle;
 mod easing;

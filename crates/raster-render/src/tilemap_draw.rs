@@ -2,12 +2,8 @@ use crate::{Camera, Layer, SpriteBatch, SpriteDraw};
 use raster_2d::{Neighbours, Tilemap, neighbours_of};
 use raster_math::{IVec2, Rect, Vec2};
 
-/// Draws the visible part of a tilemap.
-///
-/// Reuses the sprite batcher rather than building a cached mesh per chunk. That
-/// looks wasteful and is not: a 320×180 view holds about 286 tiles, or 13 KB of
-/// instance data per frame. A cached mesh would optimise something that costs
-/// nothing, and would add cache invalidation to get wrong.
+/// Draws the visible part of a tilemap. Reutilise le batcher : ~286 tuiles
+/// visibles, 13 Ko par frame, qu'un cache n'ameliorerait pas.
 pub struct TilemapRenderer {
     /// Which texture in the game's list holds the tileset.
     texture: usize,
@@ -49,10 +45,7 @@ impl TilemapRenderer {
         self
     }
 
-    /// Queues every tile the camera can see.
-    ///
-    /// Walks chunks rather than the whole map: a world of a million tiles draws
-    /// the few hundred on screen and touches nothing else.
+    /// Met en file les tuiles visibles, en parcourant les chunks.
     pub fn draw(&mut self, batch: &mut SpriteBatch, map: &Tilemap, camera: Camera) {
         self.stats = TileStats::default();
 
@@ -71,9 +64,7 @@ impl TilemapRenderer {
                 let world = origin + local;
                 let position = world.as_vec2() * tile_size;
 
-                // Une tuile hors de la vue dans un chunk visible : le chunk
-                // deborde toujours des bords, et le batcher eliminerait de
-                // toute facon, mais le faire ici evite d'y envoyer l'instance.
+                // Un chunk visible deborde toujours des bords de la vue.
                 if !visible.intersects(Rect::from_position_size(position, Vec2::splat(tile_size))) {
                     continue;
                 }
@@ -98,10 +89,7 @@ impl TilemapRenderer {
         self.stats
     }
 
-    /// Where in the tileset texture a tile's image sits.
-    ///
-    /// An autotiled tile picks one of 47 variants from its neighbours; a plain
-    /// one always uses the same image.
+    /// Ou se trouve l'image d'une tuile dans le tileset.
     fn source_rect(
         &self,
         map: &Tilemap,
@@ -113,12 +101,7 @@ impl TilemapRenderer {
 
         let atlas = if kind.autotile {
             let variant = i32::from(neighbours_of(map, world).variant());
-            /*
-              Les 47 variantes se suivent dans le tileset a partir de la
-              position declaree du type, en enroulant sur la largeur de la
-              texture. C'est la disposition la plus simple a dessiner pour un
-              artiste, et la plus simple a calculer ici.
-            */
+            // Les 47 variantes se suivent, en enroulant sur la largeur.
             let index = kind.atlas.y * i32::try_from(self.columns).unwrap_or(i32::MAX)
                 + kind.atlas.x
                 + variant;
@@ -139,10 +122,7 @@ pub fn tile_neighbours(map: &Tilemap, tile: IVec2) -> Neighbours {
     neighbours_of(map, tile)
 }
 
-/// Which of the 47 variants a neighbourhood mask selects.
-///
-/// Exposed so a tool drawing a tileset can lay its variants out in the order
-/// the renderer will look for them.
+/// La variante qu'un masque de voisinage selectionne, parmi 47.
 #[must_use]
 pub fn tile_variant(mask: u8) -> u8 {
     Neighbours(mask).variant()

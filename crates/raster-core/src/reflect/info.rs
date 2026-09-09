@@ -1,9 +1,6 @@
 use std::fmt;
 
 /// What kind of value a field holds.
-///
-/// The inspector picks a widget from this, and the serialiser uses it to reject
-/// a scene file that has drifted from the code.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValueKind {
     Bool,
@@ -15,11 +12,8 @@ pub enum ValueKind {
     Rect,
     /// A nested reflected struct, named so the registry can resolve it.
     Struct(&'static str),
-    /*
-      Une reference statique plutot qu'un Box : un FieldInfo est un `static`,
-      et une allocation est impossible dans un contexte const. Le type imbrique
-      est lui-meme un static, donc la reference est toujours disponible.
-    */
+    /// Une reference statique plutot qu'un `Box` : un `FieldInfo` est un
+    /// `static`, ou l'allocation est impossible.
     List(&'static ValueKind),
     Enum(&'static str),
     Option(&'static ValueKind),
@@ -47,8 +41,8 @@ impl fmt::Display for ValueKind {
 pub struct PropertyAttrs {
     /// Displayed but not editable.
     pub readonly: bool,
-    /// Bounds for a numeric field. The inspector renders a slider, and writes
-    /// are clamped rather than rejected.
+    /// Bornes d'un champ numerique : l'inspecteur affiche un curseur, et les
+    /// ecritures sont bornees plutot que refusees.
     pub min: Option<f64>,
     pub max: Option<f64>,
     /// Help text.
@@ -58,10 +52,8 @@ pub struct PropertyAttrs {
 /// One reflected field.
 pub struct FieldInfo {
     pub name: &'static str,
-    /// The name used in scene files, which may differ from the Rust field name.
-    ///
-    /// This is what lets a field be renamed in code without invalidating every
-    /// scene that references it.
+    /// Le nom dans les fichiers de scene : c'est lui qui permet de renommer un
+    /// champ sans invalider les scenes existantes.
     pub serialized_name: &'static str,
     pub kind: ValueKind,
     pub attrs: PropertyAttrs,
@@ -89,8 +81,7 @@ impl TypeInfo {
         self.fields.iter().find(|f| f.name == name)
     }
 
-    /// Looks a field up by its serialised name, which is what a scene file
-    /// carries.
+    /// Cherche un champ par son nom serialise.
     #[must_use]
     pub fn field_by_serialized_name(&self, name: &str) -> Option<&FieldInfo> {
         self.fields.iter().find(|f| f.serialized_name == name)

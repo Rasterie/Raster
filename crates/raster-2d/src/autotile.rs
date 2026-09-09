@@ -1,11 +1,8 @@
 use crate::{TileId, Tilemap};
 use raster_math::IVec2;
 
-/// Which of a tile's eight neighbours match it.
-///
-/// One bit per direction, in the order of [`IVec2::NEIGHBOURS`] — clockwise
-/// from up. The bit order is part of the format, since a tileset's variants are
-/// indexed by it.
+/// Lesquels des huit voisins correspondent, un bit par direction dans l'ordre
+/// de [`IVec2::NEIGHBOURS`] — cet ordre fait partie du format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Neighbours(pub u8);
 
@@ -27,18 +24,12 @@ impl Neighbours {
         self.0 & direction != 0
     }
 
-    /// The variant this neighbourhood selects, from 0 to 46.
+    /// La variante selectionnee, de 0 a 46.
     ///
-    /// A tile has 256 possible neighbourhoods but only 47 distinct appearances:
-    /// a corner neighbour only matters when both edges beside it are also
-    /// filled. Without that reduction a tileset would need 256 drawings instead
-    /// of 47, which is the difference between a feasible art task and an
-    /// unreasonable one.
+    /// 256 voisinages pour 47 apparences : un coin ne compte que si les deux
+    /// cotes qui l'encadrent sont remplis.
     #[must_use]
     pub fn variant(self) -> u8 {
-        // Un voisin diagonal ne compte que si les deux cotes qui l'encadrent
-        // sont remplis : sinon le coin est visible et la diagonale ne change
-        // rien au dessin.
         let mut mask = self.0 & Self::CARDINAL;
 
         if self.has(Self::UP) && self.has(Self::RIGHT) && self.has(Self::UP_RIGHT) {
@@ -58,10 +49,8 @@ impl Neighbours {
     }
 }
 
-/// Reads a tile's neighbourhood from the map.
-///
-/// Two tiles are neighbours for this purpose when they are the same kind — a
-/// stone block joins other stone, not dirt.
+/// Lit le voisinage d'une tuile : deux tuiles se raccordent si elles sont du
+/// meme type.
 #[must_use]
 pub fn neighbours_of(map: &Tilemap, tile: IVec2) -> Neighbours {
     let id = map.get(tile);
@@ -84,11 +73,7 @@ pub fn should_autotile(map: &Tilemap, id: TileId) -> bool {
     map.tileset().kind(id).autotile
 }
 
-/// Maps a reduced neighbourhood mask to a variant index.
-///
-/// Built once at compile time: 256 entries, of which 47 are distinct. Anything
-/// unreachable maps to 0, which draws the isolated tile — visibly wrong rather
-/// than silently plausible.
+/// Masque reduit -> indice de variante, construit a la compilation.
 static VARIANT_OF: [u8; 256] = build_variant_table();
 
 const fn build_variant_table() -> [u8; 256] {
@@ -106,10 +91,7 @@ const fn build_variant_table() -> [u8; 256] {
     table
 }
 
-/// Whether a mask can arise from the reduction in [`Neighbours::variant`].
-///
-/// A diagonal bit is only ever set when both adjacent edges are set, so a mask
-/// with a lone diagonal never occurs and needs no variant.
+/// Si un masque peut resulter de la reduction : une diagonale isolee, non.
 const fn is_reachable(mask: u8) -> bool {
     let up = mask & Neighbours::UP != 0;
     let right = mask & Neighbours::RIGHT != 0;
