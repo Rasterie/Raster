@@ -207,6 +207,16 @@ impl<A: App> ApplicationHandler for Runner<A> {
                         ElementState::Released => self.input.key_up(key),
                     }
                 }
+
+                // Le texte que la touche produit, disposition appliquee : un
+                // `A` physique donne `q` sur un clavier azerty.
+                if event.state == ElementState::Pressed
+                    && let Some(text) = &event.text
+                {
+                    for c in text.chars() {
+                        self.input.type_char(c);
+                    }
+                }
             }
 
             WindowEvent::MouseInput {
