@@ -15,6 +15,9 @@ struct Entry {
     info: &'static TypeInfo,
     /// Builds a default instance, which `apply` then fills in from the scene.
     construct: fn() -> Box<dyn ReflectObject>,
+    /// Le monde stocke par type concret, le registre ne connait que des objets
+    /// effaces : cette fonction, capturee avec le type, fait le pont.
+    spawn: fn(&mut crate::World, &Value) -> Option<crate::ActorId>,
 }
 
 /// A reflected value behind a trait object : la moitie de [`Reflect`] qui
@@ -77,15 +80,33 @@ impl TypeRegistry {
     }
 
     /// Registers a type, replacing any earlier entry under the same name.
-    pub fn register<T: Reflect + Default + Sized>(&mut self) {
+    pub fn register<T: crate::Actor>(&mut self) {
         let info = T::type_info();
         self.entries.insert(
             info.name,
             Entry {
                 info,
                 construct: || Box::new(T::default()),
+                spawn: |world, value| {
+                    let mut actor = T::default();
+                    actor.apply(value).ok()?;
+                    Some(world.spawn(actor))
+                },
             },
         );
+    }
+
+    /// Builds the named type and spawns it into `world`.
+    ///
+    /// `None` si le type est inconnu ou si les champs ne s'y appliquent pas.
+    pub fn spawn_into(
+        &self,
+        world: &mut crate::World,
+        name: &str,
+        value: &Value,
+    ) -> Option<crate::ActorId> {
+        let spawn = self.entries.get(name)?.spawn;
+        spawn(world, value)
     }
 
     #[must_use]
