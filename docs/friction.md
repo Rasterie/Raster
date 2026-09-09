@@ -32,6 +32,9 @@ hour, before enemies or scoring.
 **Points at:** M4, bitmap font rendering. Should be near the front of M4, not
 the middle.
 
+**Fixed:** `raster-ui` now ships a built-in 5x7 font (decision 019), and the
+game's title, menus and HUD are text.
+
 ## 3. Level geometry had no way to be checked
 
 Three of the first room layouts were unfinishable: platforms sat four tiles above

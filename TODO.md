@@ -352,9 +352,10 @@ files, and that is deliberate — it proves the runtime stands on its own.
 - [ ] `Widget` trait — layout, paint, event
 - [ ] Widget tree with stable identity and persistent state
 - [ ] Constraint-based layout (flex-like) plus anchors for HUDs
-- [ ] Painter API over the 2D renderer
+- [x] Painter API over the 2D renderer
 - [ ] Event routing — hover, focus, capture, keyboard navigation
-- [ ] Bitmap font rendering (a pixel art engine needs pixel fonts first)
+- [x] Bitmap font rendering — one 5x7 font built in (decision 019)
+- [ ] Loadable fonts as an asset type
 - [ ] `[?]` Vector font support later, or never
 - [ ] Theme tokens — colour, spacing, radius, motion — centralised in one place
 - [ ] Core widgets: text, button, slider, checkbox, radio, text input, list,
