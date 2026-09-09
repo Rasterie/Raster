@@ -283,7 +283,7 @@ Enough engine for a real, if small, game.
 - [x] `AssetStore<T>` / `Handle<T>` — loaded once, handles stay valid
 - [x] Placeholder for a missing texture, reported once
 - [ ] Async loading on a worker pool
-- [ ] **Hot reload** — watch, reload, swap behind live handles
+- [x] **Hot reload** — watch, reload, swap behind live handles (decision 016)
 - [x] PNG → texture, through `Textures`
 - [ ] Import pipeline — WAV → Cue
 - [ ] `asset!` macro resolving paths at compile time
