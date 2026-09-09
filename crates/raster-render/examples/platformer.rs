@@ -4,7 +4,7 @@
 //! les fleches pour se deplacer, Espace pour sauter, S pour descendre d'une
 //! plateforme, Echap pour quitter.
 
-use raster_2d::{Collision, TileId, TileKind, Tilemap, Tileset};
+use raster_2d::{Animation, Collision, Repeat, StateMachine, TileId, TileKind, Tilemap, Tileset};
 use raster_input::{Action, Axis, Grace, Input};
 use raster_math::{IRect, IVec2, Rect, Vec2};
 use raster_physics::{Body, move_body};
@@ -72,38 +72,123 @@ fn tileset_genere() -> Vec<u8> {
     pixels
 }
 
-/// Un personnage de 10x14, dessine a la main.
+/// Une planche de quatre images de 16x16, cote a cote.
+///
+/// Repos, deux images de marche et un saut : les jambes changent de position,
+/// ce qui rend l'animation visible sans dessin elabore.
 fn heros() -> Vec<u8> {
-    const MOTIF: [&str; 16] = [
-        "................",
-        "................",
-        "....######......",
-        "...########.....",
-        "...##.##.##.....",
-        "...########.....",
-        "....######......",
-        "...#########....",
-        "..##.######.##..",
-        "..##.######.##..",
-        ".....######.....",
-        ".....######.....",
-        "....###..###....",
-        "....###..###....",
-        "...####..####...",
-        "................",
+    const IMAGES: [[&str; 16]; 4] = [
+        // repos
+        [
+            "................",
+            "................",
+            "....######......",
+            "...########.....",
+            "...##.##.##.....",
+            "...########.....",
+            "....######......",
+            "...#########....",
+            "..##.######.##..",
+            "..##.######.##..",
+            ".....######.....",
+            ".....######.....",
+            "....###..###....",
+            "....###..###....",
+            "...####..####...",
+            "................",
+        ],
+        // marche 1
+        [
+            "................",
+            "................",
+            "....######......",
+            "...########.....",
+            "...##.##.##.....",
+            "...########.....",
+            "....######......",
+            "..##########....",
+            ".##..######.....",
+            ".##..######.###.",
+            ".....######.###.",
+            ".....######.....",
+            "...####...###...",
+            "..####.....###..",
+            "..###.......###.",
+            "................",
+        ],
+        // marche 2
+        [
+            "................",
+            "................",
+            "....######......",
+            "...########.....",
+            "...##.##.##.....",
+            "...########.....",
+            "....######......",
+            "...#########....",
+            "..##.######.##..",
+            "..##.######.##..",
+            ".....######.....",
+            ".....######.....",
+            "....######......",
+            "...###..###.....",
+            "..###....####...",
+            "................",
+        ],
+        // saut
+        [
+            "................",
+            "................",
+            "....######......",
+            "...########.....",
+            "...##.##.##.....",
+            "...########.....",
+            "....######......",
+            ".##########.##..",
+            ".##..######..##.",
+            ".....######.....",
+            ".....######.....",
+            "....##....##....",
+            "...###....###...",
+            "..###......###..",
+            "................",
+            "................",
+        ],
     ];
 
-    let mut pixels = Vec::with_capacity(16 * 16 * 4);
-    for ligne in MOTIF {
-        for c in ligne.chars() {
-            if c == '#' {
-                pixels.extend_from_slice(&[235, 215, 180, 255]);
-            } else {
-                pixels.extend_from_slice(&[0, 0, 0, 0]);
+    let largeur = 16 * IMAGES.len() as u32;
+    let mut pixels = vec![0u8; (largeur * 16 * 4) as usize];
+
+    for (i, image) in IMAGES.iter().enumerate() {
+        let ox = i as u32 * 16;
+        for (y, ligne) in image.iter().enumerate() {
+            for (x, c) in ligne.chars().enumerate() {
+                if c != '#' {
+                    continue;
+                }
+                let p = (((y as u32) * largeur + ox + x as u32) * 4) as usize;
+                pixels[p..p + 4].copy_from_slice(&[235, 215, 180, 255]);
             }
         }
     }
     pixels
+}
+
+/// Les etats du personnage et leurs transitions.
+fn machine_du_heros() -> StateMachine {
+    let mut m = StateMachine::new();
+    m.add("repos", Animation::new([0], 6.0));
+    m.add(
+        "marche",
+        Animation::new([1, 0, 2, 0], 10.0).with_event(0, "pas"),
+    );
+    m.add("saut", Animation::new([3], 6.0).with_repeat(Repeat::Once));
+
+    // L'ordre de declaration fait la priorite : en l'air l'emporte.
+    m.transition_any("saut", "en l'air");
+    m.transition_any("marche", "court");
+    m.transition_any("repos", "immobile");
+    m
 }
 
 struct Jeu {
@@ -111,6 +196,7 @@ struct Jeu {
     joueur: Body,
     /// Coyote time : sauter juste apres avoir quitte une plateforme marche.
     sol: Grace,
+    anim: StateMachine,
     regarde_a_gauche: bool,
     batch: Option<SpriteBatch>,
     target: Option<RenderTarget>,
@@ -140,6 +226,7 @@ impl Default for Jeu {
             map: Tilemap::new(set),
             joueur: Body::new(Rect::new(0.0, -40.0, 10.0, 14.0)),
             sol: Grace::default(),
+            anim: machine_du_heros(),
             regarde_a_gauche: false,
             batch: None,
             target: None,
@@ -159,7 +246,7 @@ impl App for Jeu {
         let taille = COLONNES * TUILE;
         self.textures = vec![
             Texture::from_rgba(gpu, layout, &tileset_genere(), taille, taille),
-            Texture::from_rgba(gpu, layout, &heros(), 16, 16),
+            Texture::from_rgba(gpu, layout, &heros(), 64, 16),
         ];
         self.batch = Some(batch);
         self.target = Some(RenderTarget::new(gpu, LARGEUR, HAUTEUR));
@@ -196,6 +283,15 @@ impl App for Jeu {
 
         let contacts = move_body(&mut self.joueur, &self.map, dt);
         self.sol.update(contacts.grounded(), dt);
+
+        let etat = if !contacts.grounded() {
+            "en l'air"
+        } else if dir != 0.0 {
+            "court"
+        } else {
+            "immobile"
+        };
+        self.anim.update(&[etat], dt);
     }
 
     fn update(&mut self, input: &mut Input, time: &raster_core::Time) {
@@ -232,6 +328,7 @@ impl App for Jeu {
 
         // Le sprite fait 16x16 mais la boite 10x14 : on centre l'un sur l'autre.
         let decalage = Vec2::new(-3.0, -2.0);
+        let image = self.anim.index() as f32;
         batch.draw(
             1,
             SpriteDraw {
@@ -239,6 +336,8 @@ impl App for Jeu {
                 flip_x: self.regarde_a_gauche,
                 tint: Colour::WHITE,
                 layer: Layer::DEFAULT,
+                // La planche fait quatre images de 16 px cote a cote.
+                source: Rect::new(image * 16.0, 0.0, 16.0, 16.0),
                 ..SpriteDraw::new(Vec2::ZERO, Vec2::splat(16.0))
             },
         );
