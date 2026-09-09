@@ -35,7 +35,10 @@ fn a_tampered_save_cannot_grant_more_hearts_than_the_game_has() {
     let trafique = "[progress]\nhealth = 999\nkeys = 0\nroom = 0\ncleared = []\n";
     let progress = save::from_toml(trafique).unwrap();
 
-    assert_eq!(progress.health, MAX_HEALTH, "un fichier edite a donne l'invincibilite");
+    assert_eq!(
+        progress.health, MAX_HEALTH,
+        "un fichier edite a donne l'invincibilite"
+    );
 }
 
 #[test]
@@ -54,7 +57,10 @@ fn a_save_with_a_bad_number_says_which_field() {
 #[test]
 fn a_save_with_a_bad_room_list_is_refused() {
     let mauvais = "[progress]\nhealth = 3\ncleared = [0, deux]\n";
-    assert!(matches!(save::from_toml(mauvais), Err(SaveError::Malformed(_))));
+    assert!(matches!(
+        save::from_toml(mauvais),
+        Err(SaveError::Malformed(_))
+    ));
 }
 
 #[test]

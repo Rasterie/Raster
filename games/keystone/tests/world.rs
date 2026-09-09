@@ -71,8 +71,10 @@ fn an_enemy_reads_its_kind_from_a_number() {
 
 #[test]
 fn bounds_follow_position() {
-    let mut player = Player::default();
-    player.position = Vec2::new(100.0, 50.0);
+    let player = Player {
+        position: Vec2::new(100.0, 50.0),
+        ..Default::default()
+    };
 
     let bounds = player.bounds();
     assert_eq!(bounds.position, Vec2::new(100.0, 50.0));
