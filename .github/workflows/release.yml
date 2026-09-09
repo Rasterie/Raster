@@ -14,7 +14,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   # Le binaire publie. A ajuster quand l'editeur devient un second artefact.
-  BINARY: raster
+  BINARY: keystone
 
 jobs:
   build:
@@ -54,10 +54,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
+            libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev \
+            libx11-dev libxcursor-dev libxrandr-dev libxi-dev libvulkan-dev
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} -p ${{ env.BINARY }}
 
       # Empaquete depuis le dossier de sortie pour que l'archive ne contienne
       # que le binaire, sans arborescence target/ imbriquee.
@@ -66,8 +67,11 @@ jobs:
         shell: bash
         run: |
           nom="${BINARY}-${{ github.ref_name }}-${{ matrix.target }}"
+          # Le README voyage avec le binaire : une archive qui ne dit pas quelles
+          # touches jouer n'est pas jouable.
+          cp games/keystone/README.md target/${{ matrix.target }}/release/
           cd target/${{ matrix.target }}/release
-          tar czf "$GITHUB_WORKSPACE/${nom}.tar.gz" "${BINARY}"
+          tar czf "$GITHUB_WORKSPACE/${nom}.tar.gz" "${BINARY}" README.md
           cd "$GITHUB_WORKSPACE"
           shasum -a 256 "${nom}.tar.gz" > "${nom}.tar.gz.sha256"
 
@@ -76,7 +80,9 @@ jobs:
         shell: pwsh
         run: |
           $nom = "$env:BINARY-${{ github.ref_name }}-${{ matrix.target }}"
-          Compress-Archive -Path "target/${{ matrix.target }}/release/$env:BINARY.exe" `
+          Copy-Item games/keystone/README.md "target/${{ matrix.target }}/release/"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/$env:BINARY.exe",
+                                 "target/${{ matrix.target }}/release/README.md" `
                            -DestinationPath "$nom.zip"
           (Get-FileHash "$nom.zip" -Algorithm SHA256).Hash.ToLower() +
             "  $nom.zip" | Out-File "$nom.zip.sha256" -Encoding ascii
