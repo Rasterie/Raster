@@ -9,6 +9,7 @@ members = [
     "crates/raster-2d",
     "crates/raster-physics",
     "crates/raster-audio",
+    "crates/raster-ui",
     "games/keystone",
 ]
 
