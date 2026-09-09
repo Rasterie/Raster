@@ -113,11 +113,10 @@ fn letters_that_should_differ_do() {
     }
 }
 
-#[test]
-fn the_metrics_leave_room_between_glyphs() {
-    assert!(ADVANCE > GLYPH_WIDTH, "les lettres se toucheraient");
-    assert!(LINE_HEIGHT > GLYPH_HEIGHT, "les lignes se toucheraient");
-}
+// Verifie a la compilation : ce sont des constantes, un test a l'execution
+// serait optimise et ne verifierait rien.
+const _: () = assert!(ADVANCE > GLYPH_WIDTH, "les lettres se toucheraient");
+const _: () = assert!(LINE_HEIGHT > GLYPH_HEIGHT, "les lignes se toucheraient");
 
 #[test]
 fn uppercase_and_lowercase_are_distinct() {
