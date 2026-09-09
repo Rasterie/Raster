@@ -49,3 +49,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [012](012-readonly-and-renames.md) | Readonly is editor-only; renames are the file name | Accepted |
 | [013](013-actor-storage.md) | Actor storage: typed pools, decided by measurement | Accepted |
 | [014](014-component-index.md) | The component index: a typed path beside reflection | Accepted |
+| [015](015-asset-identity.md) | Asset identity: the path, not a uuid | Accepted |
