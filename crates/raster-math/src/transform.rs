@@ -1,12 +1,8 @@
 use crate::{Mat3, Vec2};
 use std::fmt;
 
-/// Position, rotation and scale, kept separate.
-///
-/// This is what gameplay code and the inspector work with: setting a position
-/// should not require decomposing a matrix, and reading a rotation should give
-/// back the angle that was set. [`Mat3`] is the composed form this converts to
-/// when the renderer needs it.
+/// Position, rotation et echelle, gardees separees : lire une rotation doit
+/// rendre l'angle qu'on a pose, sans decomposer de matrice.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Transform2D {
     pub position: Vec2,
@@ -81,13 +77,10 @@ impl Transform2D {
         self.to_mat3().transform_vector(vector)
     }
 
-    /// This transform expressed inside `parent`'s space — the operation that
-    /// resolves an attachment chain.
+    /// Cette transformation dans l'espace de `parent`.
     ///
-    /// Scale composes component-wise, which is only correct while the parent's
-    /// rotation and the child's non-uniform scale do not interact. Attachments
-    /// in a 2D game rarely combine both; a case that needs it should compose
-    /// [`Mat3`]s directly.
+    /// L'echelle se compose composante par composante : correct tant que la
+    /// rotation du parent et une echelle non uniforme ne se croisent pas.
     #[inline]
     #[must_use]
     pub fn combined_with(self, parent: Self) -> Self {
@@ -98,16 +91,11 @@ impl Transform2D {
         }
     }
 
-    /// The transform that undoes this one, or `None` when it cannot be
-    /// expressed as a `Transform2D`.
+    /// L'inverse, ou `None` s'il n'est pas exprimable ici.
     ///
-    /// The inverse applies rotation before scale, while a `Transform2D` always
-    /// applies scale before rotation. The two orders only agree when the scale
-    /// is uniform, so a non-uniform scale has no `Transform2D` inverse — take
-    /// [`Transform2D::to_mat3`] and invert that instead, which always works.
-    ///
-    /// Also `None` when a scale component is zero, since that collapses the
-    /// plane and cannot be undone at all.
+    /// L'inverse tourne avant de mettre a l'echelle, un `Transform2D` fait
+    /// l'inverse : les deux ne coincident qu'a echelle uniforme. Passer par
+    /// [`Transform2D::to_mat3`] pour le cas general.
     #[must_use]
     pub fn inverse(self) -> Option<Self> {
         if self.scale.x.abs() < f32::EPSILON || self.scale.y.abs() < f32::EPSILON {
@@ -120,12 +108,7 @@ impl Transform2D {
         let inv_scale = Vec2::new(1.0 / self.scale.x, 1.0 / self.scale.y);
         let inv_rotation = -self.rotation;
 
-        /*
-          La transformation directe applique l'echelle, puis la rotation, puis
-          la translation ; l'inverse les defait dans l'ordre oppose. L'echelle
-          etant uniforme ici, la remise a l'echelle et la rotation commutent,
-          et le resultat reste exprimable en Transform2D.
-        */
+        // L'echelle etant uniforme, rotation et mise a l'echelle commutent.
         let inv_position = (-self.position).rotated(inv_rotation) * inv_scale;
 
         Some(Self {
@@ -135,9 +118,7 @@ impl Transform2D {
         })
     }
 
-    /// Interpolated component-wise. Rotation takes the shortest way round, so
-    /// interpolating from 350° to 10° passes through 0° rather than winding
-    /// backwards through 180°.
+    /// Interpole composante par composante ; la rotation prend le chemin court.
     #[must_use]
     pub fn lerp(self, other: Self, t: f32) -> Self {
         Self {

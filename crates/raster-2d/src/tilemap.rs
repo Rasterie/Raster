@@ -2,9 +2,7 @@ use crate::{Chunk, Collision, TileId, Tileset};
 use raster_math::{IRect, IVec2, Rect, Vec2};
 use std::collections::HashMap;
 
-/// The tile containing the last point strictly inside a boundary at `edge`.
-///
-/// A rectangle ending exactly on a tile boundary stops at the tile before it.
+/// La tuile du dernier point strictement avant `edge`.
 fn exclusive_index(edge: f32) -> i32 {
     let floor = edge.floor();
     if (edge - floor).abs() < f32::EPSILON {
@@ -16,9 +14,7 @@ fn exclusive_index(edge: f32) -> i32 {
 
 /// A world of tiles, unbounded in every direction.
 ///
-/// Chunks exist only where something was placed, so an empty world costs
-/// nothing and a player can walk as far as they like — which a fixed-size grid
-/// cannot offer.
+/// Les chunks n'existent que la ou quelque chose a ete pose.
 #[derive(Debug)]
 pub struct Tilemap {
     chunks: HashMap<IVec2, Chunk>,
@@ -43,10 +39,7 @@ impl Tilemap {
         &mut self.tileset
     }
 
-    /// The tile at a world coordinate.
-    ///
-    /// Empty where no chunk exists — an unbuilt part of the world reads as a
-    /// hole, which is exactly what it is.
+    /// La tuile a une coordonnee du monde ; vide la ou rien n'a ete construit.
     #[must_use]
     pub fn get(&self, tile: IVec2) -> TileId {
         self.chunks
@@ -60,8 +53,7 @@ impl Tilemap {
     pub fn set(&mut self, tile: IVec2, id: TileId) -> bool {
         let coord = Chunk::coord_of(tile);
 
-        // Ne pas creer un chunk pour y ecrire du vide : un joueur qui casse
-        // une tuile inexistante ne doit pas faire grandir la carte.
+        // Ecrire du vide ne doit pas faire grandir la carte.
         if id.is_empty() && !self.chunks.contains_key(&coord) {
             return false;
         }
@@ -102,34 +94,21 @@ impl Tilemap {
         Rect::from_position_size(tile.as_vec2() * size, Vec2::splat(size))
     }
 
-    /// Which tile contains a world-space point.
-    ///
-    /// Floors rather than truncating, so a point at -0.5 lands in tile -1.
+    /// La tuile contenant un point. Arrondi vers le bas : -0,5 tombe en -1.
     #[must_use]
     pub fn tile_at(&self, position: Vec2) -> IVec2 {
         IVec2::from_vec2_floor(position / self.tileset.tile_size() as f32)
     }
 
-    /// Every tile coordinate a world-space rectangle touches.
-    ///
-    /// This is what collision uses: rather than testing every tile in the
-    /// world, a body only looks at the handful it overlaps.
+    /// Les tuiles qu'un rectangle touche : ce que teste la collision.
     #[must_use]
     pub fn tiles_in(&self, area: Rect) -> IRect {
         let size = self.tileset.tile_size() as f32;
         let min = self.tile_at(area.min());
 
-        /*
-          Le coin superieur est exclusif : un rectangle qui s'arrete pile sur
-          une frontiere ne doit pas inclure la tuile d'apres, sinon un corps
-          colle a un mur declencherait une collision avec celle d'en face.
-
-          On ne peut pas simplement soustraire f32::EPSILON : cette constante
-          est l'ecart entre deux flottants autour de 1,0, et vers 16,0 l'ecart
-          representable est seize fois plus grand — la soustraction serait
-          absorbee. On travaille donc sur l'indice, en reculant d'une tuile
-          quand le bord tombe exactement sur une frontiere.
-        */
+        // Coin superieur exclusif : un corps colle a un mur ne doit pas
+        // toucher la tuile d'en face. f32::EPSILON serait absorbe a cette
+        // magnitude, d'ou le calcul sur l'indice.
         let far = area.max() / size;
         let max = IVec2::new(exclusive_index(far.x), exclusive_index(far.y));
 
@@ -182,22 +161,15 @@ impl Tilemap {
         self.chunks.values().map(Chunk::filled).sum()
     }
 
-    /// Drops chunks that hold nothing.
-    ///
-    /// A world where things get destroyed accumulates empty chunks that cost
-    /// memory and rebuild time for no visible reason.
+    /// Libere les chunks vides, qu'un monde ou l'on creuse accumule.
     pub fn prune(&mut self) -> usize {
         let before = self.chunks.len();
         self.chunks.retain(|_, chunk| !chunk.is_empty());
         before - self.chunks.len()
     }
 
-    /// Marks the chunks around a tile as dirty when it sits on a boundary.
-    ///
-    /// Autotiling looks at neighbours, so a tile on a chunk edge changes how
-    /// the tile across the border is drawn. Without this, seams appear exactly
-    /// where two chunks meet — a bug that only shows up on chunk boundaries
-    /// and is therefore easy to miss.
+    /// Marque les chunks voisins quand la tuile touche un bord : sans cela,
+    /// une couture apparait exactement la ou deux chunks se rencontrent.
     fn mark_neighbours(&mut self, tile: IVec2) {
         let local = Chunk::local_of(tile);
         let coord = Chunk::coord_of(tile);

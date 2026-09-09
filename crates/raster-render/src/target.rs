@@ -1,13 +1,10 @@
 use crate::{Frame, Gpu};
 use raster_math::{Rect, Vec2};
 
-/// An offscreen image at the game's resolution, scaled up to the window by a
-/// whole number.
+/// Une image hors ecran a la resolution du jeu, agrandie d'un facteur entier.
 ///
-/// Without this the renderer draws straight to the window, so a 1000-pixel-wide
-/// window showing a 320-pixel-wide game scales by 3.125 — and every eighth
-/// column of pixels ends up wider than its neighbours. Rendering small and
-/// scaling by an integer is the only way to keep every pixel the same size.
+/// Sans elle, une fenetre de 1000 pixels pour un jeu de 320 agrandit par 3,125
+/// et une colonne sur huit devient plus large que ses voisines.
 pub struct RenderTarget {
     texture: wgpu::Texture,
     view: wgpu::TextureView,
@@ -39,8 +36,7 @@ impl RenderTarget {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            // Le meme format que la surface, sinon le pipeline de dessin
-            // devrait etre compile deux fois.
+            // Le format de la surface, sinon le pipeline serait compile deux fois.
             format: gpu.format(),
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
@@ -53,8 +49,7 @@ impl RenderTarget {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            // Nearest : l'agrandissement doit dupliquer les pixels, pas les
-            // melanger. C'est tout l'interet de passer par cette cible.
+            // Nearest : l'agrandissement duplique les pixels, ne les melange pas.
             mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::MipmapFilterMode::Nearest,
@@ -208,8 +203,7 @@ impl RenderTarget {
                     depth_slice: None,
                     resolve_target: None,
                     ops: wgpu::Operations {
-                        // Efface en noir : ce qui reste autour de l'image
-                        // agrandie forme les bandes.
+                        // Le noir autour de l'image agrandie forme les bandes.
                         load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
                         store: wgpu::StoreOp::Store,
                     },

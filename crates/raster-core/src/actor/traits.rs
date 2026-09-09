@@ -2,18 +2,10 @@ use crate::reflect::Reflect;
 
 /// A type that can live in a world.
 ///
-/// An actor is an ordinary Rust struct: its components are its fields and its
-/// behaviour is its methods. The bounds say what the engine needs of it —
-/// reflection so tools can inspect it, `Default` so a scene can build one
-/// before filling it in.
-///
-/// Implemented automatically for any type meeting those bounds; there is
-/// nothing to write by hand.
+/// Une struct ordinaire : ses composants sont ses champs, son comportement ses
+/// methodes. Implemente automatiquement, rien a ecrire a la main.
 pub trait Actor: Reflect + Default + Sized + 'static {
-    /// The name used in scene files and in the inspector.
-    ///
-    /// Defaults to the type name from reflection, which is almost always what
-    /// you want.
+    /// Le nom utilise dans les fichiers de scene et l'inspecteur.
     #[must_use]
     fn type_name() -> &'static str {
         Self::type_info().name
@@ -22,22 +14,15 @@ pub trait Actor: Reflect + Default + Sized + 'static {
 
 impl<T: Reflect + Default + Sized + 'static> Actor for T {}
 
-/// The lifecycle hooks an actor may implement.
+/// Les points d'entree du cycle de vie, tous optionnels.
 ///
-/// Every hook is optional and defaults to doing nothing, so an actor implements
-/// only what it needs.
-///
-/// Deliberately absent: `on_render`. Actors do not draw — the renderer reads
-/// `Sprite` components. Giving actors a draw callback would break batching and
-/// tie the renderer to gameplay.
+/// Pas d'`on_render` : les acteurs ne dessinent pas, le renderer lit leurs
+/// composants. Un rappel de dessin casserait le regroupement.
 pub trait Behaviour: Actor {
     /// Once per frame, with the time since the last one.
     fn tick(&mut self, _dt: f32) {}
 
-    /// At a fixed timestep, for anything coupled to physics.
-    ///
-    /// A platformer whose jump height depends on frame rate is the bug this
-    /// prevents, and it is discovered far too late.
+    /// A cadence fixe, pour ce qui est couple a la physique.
     fn fixed_tick(&mut self, _dt: f32) {}
 
     /// Added to the world, after its fields are initialised.

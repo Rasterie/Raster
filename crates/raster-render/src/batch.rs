@@ -2,9 +2,6 @@ use crate::sprite::{Instance, SpriteDraw};
 use crate::{Camera, Frame, Gpu, Texture};
 
 /// Draws sprites, grouped so that as few draw calls as possible reach the GPU.
-///
-/// Cleared and refilled every frame: submitting a sprite states an intent for
-/// this frame, not a resource the renderer keeps.
 pub struct SpriteBatch {
     pipeline: wgpu::RenderPipeline,
     camera_buffer: wgpu::Buffer,
@@ -31,8 +28,7 @@ pub struct Stats {
 }
 
 impl SpriteBatch {
-    /// The instance buffer starts here and grows as needed. Large enough that
-    /// a typical scene never reallocates, small enough to be trivial memory.
+    /// Capacite initiale du tampon d'instances, doublee au besoin.
     const INITIAL_CAPACITY: u64 = 1024;
 
     pub fn new(gpu: &Gpu) -> Self {
@@ -124,8 +120,6 @@ impl SpriteBatch {
                     entry_point: Some("fs_main"),
                     targets: &[Some(wgpu::ColorTargetState {
                         format: gpu.format(),
-                        // Alpha classique : le sprite se compose sur le fond
-                        // selon son canal alpha.
                         blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
@@ -135,8 +129,7 @@ impl SpriteBatch {
                     topology: wgpu::PrimitiveTopology::TriangleStrip,
                     strip_index_format: None,
                     front_face: wgpu::FrontFace::Ccw,
-                    // Pas d'elimination des faces : un sprite retourne
-                    // inverserait son sens de parcours et disparaitrait.
+                    // Un sprite retourne disparaitrait avec l'elimination.
                     cull_mode: None,
                     polygon_mode: wgpu::PolygonMode::Fill,
                     unclipped_depth: false,
@@ -181,17 +174,11 @@ impl SpriteBatch {
         self.queued.push((texture, sprite));
     }
 
-    /// Draws everything queued into the frame's own surface.
-    ///
-    /// Convenience for drawing straight to the window. A game wanting
-    /// pixel-perfect scaling draws into a [`RenderTarget`](crate::RenderTarget)
-    /// with [`SpriteBatch::flush_into`] instead.
+    /// Dessine dans la surface de la frame. Pour un rendu pixel-perfect,
+    /// passer par [`SpriteBatch::flush_into`] et une `RenderTarget`.
     pub fn flush(&mut self, gpu: &Gpu, frame: &mut Frame, camera: Camera, textures: &[Texture]) {
-        /*
-          La vue et l'encodeur sont deux champs distincts de la frame : les
-          emprunter separement est correct, mais le compilateur ne le voit pas
-          a travers un appel de methode. On decoupe donc l'emprunt ici.
-        */
+        // Emprunts separes : le compilateur ne le verrait pas a travers un
+        // appel de methode.
         let Frame { view, encoder, .. } = frame;
         self.flush_parts(gpu, encoder, view, camera, textures);
     }
@@ -227,11 +214,7 @@ impl SpriteBatch {
 
         self.upload_camera(gpu, camera);
 
-        /*
-          Tri par (couche, texture) : la couche impose l'ordre de dessin, et
-          regrouper par texture ensuite permet un seul appel de dessin par
-          groupe plutot qu'un par sprite.
-        */
+        // Tri par (couche, texture) : un appel de dessin par groupe.
         self.queued
             .sort_by_key(|(texture, sprite)| (sprite.layer, *texture));
 
@@ -278,8 +261,7 @@ impl SpriteBatch {
                 depth_slice: None,
                 resolve_target: None,
                 ops: wgpu::Operations {
-                    // Load : le fond a deja ete efface, et repasser dessus
-                    // effacerait ce que d'autres passes ont dessine.
+                    // Load : effacer ici ecraserait les passes precedentes.
                     load: wgpu::LoadOp::Load,
                     store: wgpu::StoreOp::Store,
                 },
@@ -319,8 +301,7 @@ impl SpriteBatch {
     fn upload_instances(&mut self, gpu: &Gpu) {
         let needed = self.instances.len() as u64;
 
-        // Croissance par doublement : une scene qui grandit progressivement ne
-        // reallouerait pas a chaque frame.
+        // Doublement : une scene qui grandit ne realloue pas chaque frame.
         if needed > self.instance_capacity {
             self.instance_capacity = needed.next_power_of_two();
             self.instance_buffer = gpu.device.create_buffer(&wgpu::BufferDescriptor {

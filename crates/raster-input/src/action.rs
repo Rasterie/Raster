@@ -1,10 +1,7 @@
 use std::collections::HashMap;
 
-/// What a game does, named by intent rather than by key.
-///
-/// Gameplay asks whether `Jump` is pressed, never whether Space is. That is
-/// what makes rebinding and gamepad support possible without touching gameplay
-/// code.
+/// Ce que fait le jeu, nomme par intention plutot que par touche : c'est ce
+/// qui rend le rebindage possible sans toucher au gameplay.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Action(pub &'static str);
 
@@ -41,11 +38,8 @@ pub enum Binding {
     GamepadButton(GamepadButton),
 }
 
-/// A keyboard key, identified by physical position rather than by the
-/// character it produces.
-///
-/// Position rather than character on purpose: WASD must stay under the same
-/// fingers on an AZERTY keyboard, where those positions produce ZQSD.
+/// Une touche, identifiee par position physique : WASD doit rester sous les
+/// memes doigts en AZERTY, ou ces positions donnent ZQSD.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Key {
     A,
@@ -137,10 +131,8 @@ pub enum GamepadButton {
     Select,
 }
 
-/// Which physical inputs trigger which actions.
-///
-/// Several bindings may map to one action — a gamepad button alongside a key —
-/// and the action fires if any of them is active.
+/// Quelles entrees physiques declenchent quelles actions ; plusieurs liaisons
+/// par action, et n'importe laquelle suffit.
 #[derive(Debug, Clone, Default)]
 pub struct Bindings {
     map: HashMap<Action, Vec<Binding>>,
@@ -152,10 +144,8 @@ impl Bindings {
         Self::default()
     }
 
-    /// A layout that lets a game run before anyone configures anything.
-    ///
-    /// Both WASD and the arrow keys, because a player will try one or the
-    /// other and being wrong about which is an avoidable annoyance.
+    /// Une disposition par defaut : WASD et les fleches, un joueur essaiera
+    /// l'une ou l'autre.
     #[must_use]
     pub fn default_layout() -> Self {
         let mut bindings = Self::new();

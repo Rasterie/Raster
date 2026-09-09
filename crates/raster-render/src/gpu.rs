@@ -29,9 +29,7 @@ impl std::error::Error for GpuError {}
 
 /// The GPU device and the surface it draws to.
 ///
-/// Holds an `Arc<Window>` rather than a borrow: the surface must not outlive
-/// the window it draws into, and tying the two together is simpler than
-/// threading a lifetime through every renderer type.
+/// Detient un `Arc<Window>` : la surface ne doit pas survivre a sa fenetre.
 pub struct Gpu {
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
@@ -117,11 +115,8 @@ impl Gpu {
         })
     }
 
-    /// Reconfigures the surface after the window changed size.
-    ///
-    /// A zero dimension is ignored rather than passed through: minimising a
-    /// window on Windows reports (0, 0), and configuring a zero-sized surface
-    /// is an error.
+    /// Reconfigure la surface apres un redimensionnement. Une dimension nulle
+    /// est ignoree : reduire une fenetre sous Windows rapporte (0, 0).
     pub fn resize(&mut self, width: u32, height: u32) {
         if width == 0 || height == 0 || (width == self.config.width && height == self.config.height)
         {
@@ -132,12 +127,8 @@ impl Gpu {
         self.surface.configure(&self.device, &self.config);
     }
 
-    /// The next frame to draw into, or `None` if this frame should be skipped.
-    ///
-    /// Skipping is normal, not exceptional: a window being resized, minimised
-    /// or moved between displays produces a frame that cannot be drawn. The
-    /// surface is reconfigured where that helps, and the caller simply waits
-    /// for the next frame.
+    /// La frame suivante, ou `None` s'il faut la sauter — ce qui est normal
+    /// pendant un redimensionnement ou un changement d'ecran.
     pub fn begin_frame(&mut self) -> Option<Frame> {
         use wgpu::CurrentSurfaceTexture as Current;
 
@@ -221,10 +212,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    /// Clears the frame to a colour.
-    ///
-    /// This is the whole renderer for now — M1 replaces it with sprite
-    /// batching.
+    /// Efface la frame a une couleur.
     pub fn clear(&mut self, colour: wgpu::Color) {
         self.encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("clear"),

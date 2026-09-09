@@ -1,10 +1,6 @@
 use raster_math::{Rect, Vec2};
 
-/// Which layer a sprite draws on.
-///
-/// Layers draw in ascending order, so a lower number is further back. Within a
-/// layer, order is by insertion — a game that needs finer control uses more
-/// layers rather than relying on submission order.
+/// Which layer a sprite draws on, lowest first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Layer(pub i16);
 
@@ -51,16 +47,12 @@ impl Default for Colour {
     }
 }
 
-/// One sprite to draw this frame.
-///
-/// Submitted to the renderer rather than stored: the batcher clears every
-/// frame, so this describes an intent, not a resource.
+/// One sprite to draw this frame : une intention, pas une ressource.
 #[derive(Debug, Clone, Copy)]
 pub struct SpriteDraw {
     /// Top-left corner in world space.
     pub position: Vec2,
-    /// Size in world pixels. Usually the source rectangle's size, but a sprite
-    /// may be stretched.
+    /// Size in world pixels.
     pub size: Vec2,
     /// The region of the texture to sample, in pixels.
     pub source: Rect,
@@ -92,10 +84,7 @@ impl SpriteDraw {
     }
 }
 
-/// What the GPU receives per sprite.
-///
-/// Mirrors the `Instance` struct in `sprite.wgsl`. `repr(C)` keeps the layout
-/// predictable, which the vertex attribute offsets below depend on.
+/// What the GPU receives per sprite. Reflete `Instance` dans `sprite.wgsl`.
 #[repr(C)]
 #[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub(crate) struct Instance {
@@ -107,10 +96,7 @@ pub(crate) struct Instance {
 }
 
 impl Instance {
-    /// Builds the GPU form of a sprite.
-    ///
-    /// `atlas` is the texture's size in pixels, used to normalise the source
-    /// rectangle into UV coordinates.
+    /// Construit la forme GPU d'un sprite ; `atlas` normalise les UV.
     pub(crate) fn new(draw: &SpriteDraw, atlas: Vec2) -> Self {
         let mut uv_min = Vec2::new(draw.source.left() / atlas.x, draw.source.top() / atlas.y);
         let mut uv_max = Vec2::new(
@@ -118,8 +104,8 @@ impl Instance {
             draw.source.bottom() / atlas.y,
         );
 
-        // Flipping swaps the UV bounds rather than the geometry: the quad's
-        // winding stays the same, so no separate pipeline state is needed.
+        // Le retournement echange les UV, pas la geometrie : le sens de
+        // parcours du quad reste le meme.
         if draw.flip_x {
             std::mem::swap(&mut uv_min.x, &mut uv_max.x);
         }
@@ -128,12 +114,7 @@ impl Instance {
         }
 
         Self {
-            /*
-              L'accrochage a la grille se fait ici, une fois, sur la position
-              finale. Les sprites s'accrochent, la camera non : c'est ce couple
-              qui donne des pixels nets et un defilement fluide, et l'inverser
-              produit soit du flou soit des saccades.
-            */
+            // Accrochage a la grille : les sprites s'accrochent, la camera non.
             position: draw.position.snap().to_array(),
             size: draw.size.to_array(),
             uv_min: uv_min.to_array(),

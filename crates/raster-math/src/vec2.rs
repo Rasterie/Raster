@@ -81,11 +81,8 @@ impl Vec2 {
         (other - self).length_squared()
     }
 
-    /// The unit vector in the same direction, or [`Vec2::ZERO`] if this vector
-    /// is too short to have a reliable direction.
-    ///
-    /// Returning zero rather than `NaN` means a degenerate case propagates as a
-    /// visible standstill instead of poisoning every later computation.
+    /// Le vecteur unitaire de meme direction, ou zero si trop court : un `NaN`
+    /// contaminerait tous les calculs suivants.
     #[inline]
     #[must_use]
     pub fn normalized(self) -> Self {
@@ -216,9 +213,8 @@ impl Vec2 {
         Self::new(self.x.round(), self.y.round())
     }
 
-    /// Snapped to whole pixels. The renderer applies this to sprite positions
-    /// so pixel art lands on the grid; cameras deliberately skip it to keep
-    /// scrolling smooth.
+    /// Accroche aux pixels entiers : le renderer l'applique aux sprites, pas
+    /// aux cameras.
     #[inline]
     #[must_use]
     pub fn snap(self) -> Self {

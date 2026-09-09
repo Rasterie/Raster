@@ -3,23 +3,13 @@ use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
-/// Every actor in the game, and the only path to mutate one.
-///
-/// A flat collection: there is no root and no scene tree. An actor exists in
-/// the world, and a hierarchy is something you opt into.
-///
-/// Storage is one pool per actor type — see decision 013 — reached through a
-/// map from `TypeId` to a type-erased pool. That indirection is the cost of the
-/// design, so it is kept to a single hash lookup and a downcast.
+/// Every actor in the game, and the only path to mutate one. Une collection
+/// plate, un pool par type d'acteur — voir la decision 013.
 #[derive(Default)]
 pub struct World {
     pools: HashMap<TypeId, ErasedPool>,
-    /*
-      Les tags sont attribues sequentiellement a partir de zero, donc un Vec
-      indexe par le tag remplace une seconde HashMap sur le chemin de `despawn`
-      et de `contains` — les deux operations qui partent d'un identifiant sans
-      connaitre le type.
-    */
+    /// Tag -> type. Un Vec indexe plutot qu'une carte : les tags sont
+    /// sequentiels, et cela evite un hachage sur le chemin de `despawn`.
     tags: Vec<TypeId>,
 }
 
@@ -27,26 +17,16 @@ pub struct World {
 /// perform without knowing `T`.
 struct ErasedPool {
     pool: Box<dyn Any>,
-    /// Removes an actor without the caller knowing its type — what `despawn`
-    /// needs when all it has is an id.
     despawn: fn(&mut dyn Any, ActorId) -> bool,
     len: fn(&dyn Any) -> usize,
     clear: fn(&mut dyn Any),
-    /// Whether an id is still live, without the caller knowing the type.
     contains: fn(&dyn Any, ActorId) -> bool,
-    /*
-      Une fonction d'iteration par type de composant present dans ce type
-      d'acteur. C'est ce qui permet au renderer de parcourir tous les Sprite
-      sans connaitre Player : la fonction est enregistree quand le type est
-      declare, et le rappel evite d'allouer un Vec par frame.
-    */
+    /// Une iteration par type de composant : c'est ce qui laisse le renderer
+    /// parcourir tous les `Sprite` sans connaitre `Player`.
     components: HashMap<TypeId, ComponentIter>,
 }
 
 /// Applique `f` a chaque composant du type voulu detenu par un pool.
-///
-/// Le composant est passe en `&dyn Any` faute de pouvoir nommer son type ici ;
-/// l'appelant le retrouve par downcast, qui est resolu statiquement.
 type ComponentIter = fn(&dyn Any, &mut dyn FnMut(ActorId, &dyn Any));
 
 impl World {
@@ -57,9 +37,7 @@ impl World {
 
     /// Adds an actor and returns its id.
     ///
-    /// The actor's `on_spawn` hook is not called here: `spawn` knows nothing
-    /// about `Behaviour`, which an actor need not implement. Worlds driven by
-    /// the frame loop use [`World::spawn_with_hook`].
+    /// Does not run `on_spawn` — see [`World::spawn_with_hook`] for that.
     pub fn spawn<T: Actor>(&mut self, actor: T) -> ActorId {
         self.pool_mut::<T>().spawn(actor)
     }
@@ -70,10 +48,8 @@ impl World {
         self.spawn(actor)
     }
 
-    /// Removes an actor, returning whether it was there.
-    ///
-    /// Despawning an already-dead actor is a no-op rather than an error: two
-    /// systems deciding to destroy the same enemy in one frame is normal.
+    /// Removes an actor, returning whether it was there. Despawning twice is a
+    /// no-op: two systems destroying the same enemy in one frame is normal.
     pub fn despawn(&mut self, id: ActorId) -> bool {
         let Some(type_id) = self.tags.get(id.type_tag() as usize).copied() else {
             return false;
@@ -108,10 +84,7 @@ impl World {
         self.pool_opt_mut::<T>()?.get_mut(id)
     }
 
-    /// Whether an id still refers to a live actor.
-    ///
-    /// Does not require knowing the actor's type, which is what makes it usable
-    /// on an id received from elsewhere.
+    /// Whether an id still refers to a live actor, without knowing its type.
     #[must_use]
     pub fn contains(&self, id: ActorId) -> bool {
         let Some(type_id) = self.tags.get(id.type_tag() as usize) else {
@@ -123,10 +96,8 @@ impl World {
         (erased.contains)(erased.pool.as_ref(), id)
     }
 
-    /// Every actor of one type, with its id.
-    ///
-    /// This is the fast path the storage model was chosen for: the actors of
-    /// one type are contiguous.
+    /// Every actor of one type, with its id. The fast path the storage model
+    /// was chosen for — actors of one type are contiguous.
     pub fn iter<T: Actor>(&self) -> impl Iterator<Item = (ActorId, &T)> {
         self.pool_opt::<T>().into_iter().flat_map(Pool::iter)
     }
@@ -186,11 +157,8 @@ impl World {
         }
     }
 
-    /// Declares that actors of type `T` hold components of type `C`.
-    ///
-    /// Registration is explicit for the same reason type registration is — see
-    /// decision 011. Without it, [`World::each_component`] would silently skip
-    /// this actor type, which is worse than a compile-time chore.
+    /// Declare que les acteurs `T` portent des composants `C`. Explicite :
+    /// l'oublier fait ignorer ce type silencieusement.
     pub fn register_component<T, C>(&mut self)
     where
         T: Actor + HasComponent<C>,
@@ -207,8 +175,7 @@ impl World {
             }
         };
 
-        // Force la creation du pool : un type declare mais jamais peuple doit
-        // quand meme etre connu, sinon l'enregistrement serait perdu.
+        // Force la creation du pool, sinon l'enregistrement serait perdu.
         let _ = self.pool_mut::<T>();
 
         if let Some(erased) = self.pools.get_mut(&TypeId::of::<T>()) {
@@ -216,12 +183,8 @@ impl World {
         }
     }
 
-    /// Applies `f` to every component of type `C` in the world, whatever actor
-    /// holds it.
-    ///
-    /// This is the renderer's path to every `Sprite`. Takes a callback rather
-    /// than returning an iterator: the components live in different pools of
-    /// different types, and collecting them would allocate once per frame.
+    /// Applique `f` a chaque composant `C`, quel que soit l'acteur. Un rappel
+    /// plutot qu'un iterateur : collecter allouerait chaque frame.
     pub fn each_component<C: Component>(&self, mut f: impl FnMut(ActorId, &C)) {
         let component_id = TypeId::of::<C>();
 
@@ -249,8 +212,7 @@ impl World {
     fn pool_mut<T: Actor>(&mut self) -> &mut Pool<T> {
         let type_id = TypeId::of::<T>();
 
-        // `entry` plutot que contains_key + insert : une seule recherche, et
-        // `spawn` est appele en boucle de jeu.
+        // `entry` : une seule recherche la ou contains_key + insert en fait deux.
         if let Entry::Vacant(slot) = self.pools.entry(type_id) {
             let tag =
                 u16::try_from(self.tags.len()).expect("more than 65 535 actor types in one world");

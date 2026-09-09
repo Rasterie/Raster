@@ -33,26 +33,18 @@ impl Default for WindowConfig {
 
 /// What a game implements to be driven by the engine's frame loop.
 ///
-/// The engine owns the loop and calls in; the game does not own `main`. That is
-/// what lets the same game run inside the editor's play-in-editor panel later.
+/// Le moteur possede la boucle : c'est ce qui permettra de faire tourner le
+/// meme jeu dans le panneau de l'editeur.
 pub trait App {
     /// Called once, after the GPU is ready.
     fn init(&mut self, _gpu: &mut Gpu) {}
 
-    /// Called at a fixed rate, before [`App::update`].
-    ///
-    /// May run zero, one or several times in a frame — whatever it takes to
-    /// keep the simulation at its fixed rate. Movement and physics belong here:
-    /// a jump height computed from the frame delta would depend on the machine.
+    /// Appele a cadence fixe, zero a plusieurs fois par frame. Le mouvement et
+    /// la physique vont ici, sinon ils dependent de la machine.
     fn fixed_update(&mut self, _input: &Input, _dt: f32) {}
 
-    /// Called once per frame, before drawing.
-    ///
-    /// `input` already reflects this frame: it is advanced by the engine
-    /// before this runs, so a press registered here is fresh.
-    ///
-    /// For anything that should follow the frame rate rather than the fixed
-    /// step — camera smoothing, UI, effects.
+    /// Appele une fois par frame, avant le dessin. Pour ce qui doit suivre la
+    /// frequence d'images : camera, interface, effets.
     fn update(&mut self, _input: &mut Input, _time: &Time) {}
 
     /// Called once per frame to draw.
@@ -67,11 +59,8 @@ pub trait App {
         true
     }
 
-    /// Whether the game wants to stop.
-    ///
-    /// Checked after every frame. Distinct from `close_requested`, which asks
-    /// whether the *window* may close: this is the game deciding for itself,
-    /// which is what a pause menu's Quit needs.
+    /// Si le jeu veut s'arreter. Distinct de `close_requested`, qui repond a
+    /// la fenetre : ici c'est le jeu qui decide.
     fn should_exit(&self) -> bool {
         false
     }
@@ -85,8 +74,7 @@ pub trait App {
 pub fn run<A: App + 'static>(config: WindowConfig, app: A) -> Result<(), RunError> {
     let event_loop = EventLoop::new().map_err(RunError::EventLoop)?;
 
-    // Poll plutot que Wait : un jeu redessine en continu, il n'attend pas une
-    // interaction. Wait conviendrait a un editeur, pas a une boucle de jeu.
+    // Poll : un jeu redessine en continu, il n'attend pas d'interaction.
     event_loop.set_control_flow(ControlFlow::Poll);
 
     let mut runner = Runner {
@@ -133,11 +121,8 @@ impl std::fmt::Display for RunError {
 
 impl std::error::Error for RunError {}
 
-/// What exists only once the event loop has started.
-///
-/// `winit` cannot create a window before `resumed` fires, so the window and the
-/// GPU cannot be built in `run` — hence this being an `Option` rather than a
-/// plain field.
+/// Ce qui n'existe qu'une fois la boucle demarree : `winit` ne cree pas de
+/// fenetre avant `resumed`.
 struct State {
     gpu: Gpu,
     window: Arc<Window>,
@@ -158,9 +143,7 @@ struct Runner<A: App> {
 
 impl<A: App> ApplicationHandler for Runner<A> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        // Sur mobile, `resumed` se declenche a chaque retour au premier plan.
-        // Sur bureau il n'arrive qu'une fois, mais le garde evite de recreer
-        // la fenetre le jour ou une plateforme mobile sera visee.
+        // `resumed` se redeclenche a chaque retour au premier plan sur mobile.
         if self.state.is_some() {
             return;
         }
@@ -213,9 +196,8 @@ impl<A: App> ApplicationHandler for Runner<A> {
             }
 
             WindowEvent::KeyboardInput { event, .. } => {
-                // Les repetitions de touche sont ignorees : le systeme les
-                // envoie a sa propre cadence, ce qui ferait qu'une touche
-                // maintenue produirait des pressions repetees dans le jeu.
+                // Ignore les repetitions systeme : une touche maintenue ne doit
+                // pas produire des pressions repetees.
                 if event.repeat {
                     return;
                 }
@@ -248,18 +230,16 @@ impl<A: App> ApplicationHandler for Runner<A> {
             WindowEvent::MouseWheel { delta, .. } => {
                 let amount = match delta {
                     MouseScrollDelta::LineDelta(_, y) => y,
-                    // Un defilement par pixels : ramene a une echelle proche
-                    // d'un cran de molette, sans quoi un pave tactile
-                    // produirait des valeurs cent fois plus grandes.
+                    // Ramene au cran de molette : un pave tactile donnerait
+                    // sinon des valeurs cent fois plus grandes.
                     MouseScrollDelta::PixelDelta(p) => p.y as f32 / 50.0,
                 };
                 self.input.add_scroll(amount);
             }
 
             WindowEvent::Focused(false) => {
-                // Une touche maintenue pendant un changement de fenetre
-                // resterait enfoncee pour toujours : l'evenement de
-                // relachement part a l'autre fenetre.
+                // Sans cela une touche maintenue resterait enfoncee : son
+                // relachement partirait a l'autre fenetre.
                 self.input.release_all();
             }
 
@@ -271,8 +251,7 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 let steps = self.frame_loop.advance(dt);
                 self.input.begin_frame(dt);
 
-                // Les pas fixes d'abord, puis la mise a jour variable, puis le
-                // dessin : l'ordre documente dans docs/domains/game.md.
+                // Pas fixes, mise a jour, dessin : l'ordre de game.md.
                 for fixed_dt in steps {
                     self.app.fixed_update(&self.input, fixed_dt);
                 }
@@ -289,11 +268,8 @@ impl<A: App> ApplicationHandler for Runner<A> {
         }
     }
 
-    /// Redemande une frame des que la file d'evenements est vide.
-    ///
-    /// C'est ce qui fait tourner la boucle en continu : un jeu redessine sans
-    /// attendre d'interaction. Le faire ici plutot que dans `RedrawRequested`
-    /// evite de programmer deux redraws pour une seule frame.
+    /// Redemande une frame des que la file est vide : c'est ce qui fait
+    /// tourner la boucle en continu.
     fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
         if let Some(state) = self.state.as_ref() {
             state.window.request_redraw();
