@@ -8,6 +8,7 @@ members = [
     "crates/raster-input",
     "crates/raster-2d",
     "crates/raster-physics",
+    "crates/raster-audio",
 ]
 
 # Crates are added as their milestone arrives — see TODO.md.
