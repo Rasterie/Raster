@@ -199,6 +199,14 @@ impl App for Jeu {
     }
 
     fn render(&mut self, gpu: &mut Gpu) {
+        // Rechargement a chaud : reenregistrer heros.png le montre a l'ecran
+        // sans relancer le jeu.
+        if let (Some(textures), Some(batch)) = (self.textures.as_mut(), self.batch.as_ref()) {
+            for id in textures.reload_changed(gpu, batch.texture_layout()) {
+                println!("recharge : {id}");
+            }
+        }
+
         let (Some(batch), Some(target)) = (self.batch.as_mut(), self.target.as_ref()) else {
             return;
         };
