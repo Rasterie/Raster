@@ -8,11 +8,13 @@
 
 use raster_core::World;
 use raster_core::actor::Component;
+use raster_core::asset::{AssetId, Handle, Project};
 use raster_core::reflect::Reflect;
 use raster_input::{Action, Axis, Input};
 use raster_math::{Rect, Vec2};
 use raster_render::{
-    App, Camera, Colour, Gpu, Layer, RenderTarget, SpriteBatch, SpriteDraw, Texture, WindowConfig,
+    App, Camera, Colour, Gpu, Layer, RenderTarget, SpriteBatch, SpriteDraw, Texture, Textures,
+    WindowConfig,
 };
 
 const LARGEUR: u32 = 320;
@@ -73,7 +75,9 @@ struct Jeu {
     /// pixels de largeurs inegales des que celle-ci n'est pas un multiple
     /// exact de 320x180.
     target: Option<RenderTarget>,
-    textures: Vec<Texture>,
+    textures: Option<Textures>,
+    damier: Option<Handle<Texture>>,
+    heros: Option<Handle<Texture>>,
     camera: Camera,
     joueur: Option<raster_core::ActorId>,
     quitter: bool,
@@ -86,7 +90,9 @@ impl Default for Jeu {
             world: World::new(),
             batch: None,
             target: None,
-            textures: Vec::new(),
+            textures: None,
+            damier: None,
+            heros: None,
             camera: Camera::new(LARGEUR, HAUTEUR),
             joueur: None,
             quitter: false,
@@ -99,23 +105,26 @@ impl App for Jeu {
         let batch = SpriteBatch::new(gpu);
         let layout = batch.texture_layout();
 
-        // Le damier est genere, le heros charge depuis un PNG.
-        let heros = match Texture::load(
+        let projet = Project::discover(std::env::current_dir().unwrap_or_default())
+            .unwrap_or_else(|| Project::new("."));
+        let mut textures = Textures::new(gpu, layout, projet);
+
+        // Le damier est genere, le heros charge par son identifiant d'asset.
+        self.damier = Some(textures.insert(
+            AssetId::new("<damier>"),
+            Texture::from_rgba(gpu, layout, &damier(16), 16, 16),
+        ));
+        self.heros = Some(textures.load(
             gpu,
             layout,
-            "crates/raster-render/examples/assets/heros.png",
-        ) {
-            Ok(texture) => texture,
-            Err(e) => {
-                // Un asset manquant ne doit pas empecher le jeu de demarrer :
-                // le damier magenta signale le probleme a l'ecran.
-                eprintln!("heros.png introuvable ({e}) — texture de remplacement");
-                Texture::placeholder(gpu, layout)
-            }
-        };
-
-        self.textures = vec![Texture::from_rgba(gpu, layout, &damier(16), 16, 16), heros];
+            &AssetId::new("crates/raster-render/examples/assets/heros.png"),
+        ));
+        self.textures = Some(textures);
         self.batch = Some(batch);
+
+        // Le batcher indexe une tranche : un handle lui donne son indice.
+        let damier_id = self.damier.expect("damier").index();
+        let heros_id = self.heros.expect("heros").index();
         self.target = Some(RenderTarget::new(gpu, LARGEUR, HAUTEUR));
 
         self.world.register_component::<Player, Sprite>();
@@ -125,7 +134,7 @@ impl App for Jeu {
         for i in -10..11 {
             self.world.spawn(Decor {
                 sprite: Sprite {
-                    texture: 0,
+                    texture: damier_id,
                     tint_r: 1.0,
                     tint_g: 1.0,
                     tint_b: 1.0,
@@ -136,7 +145,7 @@ impl App for Jeu {
         for (x, y) in [(-64.0, 44.0), (-48.0, 44.0), (48.0, 28.0), (64.0, 44.0)] {
             self.world.spawn(Decor {
                 sprite: Sprite {
-                    texture: 0,
+                    texture: damier_id,
                     tint_r: 0.7,
                     tint_g: 0.9,
                     tint_b: 1.0,
@@ -147,7 +156,7 @@ impl App for Jeu {
 
         self.joueur = Some(self.world.spawn(Player {
             sprite: Sprite {
-                texture: 1,
+                texture: heros_id,
                 tint_r: 1.0,
                 tint_g: 1.0,
                 tint_b: 1.0,
@@ -237,7 +246,14 @@ impl App for Jeu {
             );
         }
 
-        batch.flush_into(gpu, &mut frame, target.view(), self.camera, &self.textures);
+        let textures = self.textures.as_ref().expect("textures");
+        batch.flush_into(
+            gpu,
+            &mut frame,
+            target.view(),
+            self.camera,
+            textures.as_slice(),
+        );
 
         // Agrandit la cible sur la fenetre, d'un facteur entier.
         let (w, h) = gpu.size();
