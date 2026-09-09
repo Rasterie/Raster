@@ -34,6 +34,17 @@ The `rnc` DSL matters beyond audio: it is proof that writing a language is withi
 reach, which is relevant to
 [architecture/scripting.md](../architecture/scripting.md).
 
+### What it does not provide
+
+Resonance *generates* sound; it does not read it. `hound` appears there only as
+a `WavWriter`, and `play_realtime(source, seconds)` is a composition tool's API,
+not a game's. A game needs the opposite first: playing recorded files, many at
+once, each with its own volume and position.
+
+So `raster-audio` owns WAV decoding, voices, buses and the mix, and none of that
+belongs in Resonance. The two meet at `Source`: a cue that mixes recorded sounds
+with synthesised ones is composition, not a change to either side.
+
 ## The boundary
 
 `resonance-core` stays free of Raster types. It is a library about sound, useful
@@ -46,6 +57,7 @@ outside a game engine, and keeping it that way keeps its API honest.
 | Oscillators, envelopes, filters, effects | `resonance-core` |
 | Sequencing, notes, timing | `resonance-core` |
 | Device output, WAV export | `resonance-core` |
+| WAV *decoding* | `raster-audio` |
 | Cues, buses, mixing | `raster-audio` |
 | Spatial attenuation, actor↔sound link | `raster-audio` |
 | Asset integration, hot reload | `raster-audio` |
