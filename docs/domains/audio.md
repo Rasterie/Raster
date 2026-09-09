@@ -94,8 +94,8 @@ Cheap and effective, and specific to 2D rather than a 3D system reduced:
   perceived depth than volume alone
 - **Listener** attached to an actor, usually the camera or the player
 
-No HRTF, no reverb zones with geometry. A Terraria-like needs a cave to sound
-different from the surface, which is a bus snapshot, not ray-traced acoustics.
+No HRTF, no reverb zones with geometry. A cave sounding different from the
+surface is a bus snapshot, not ray-traced acoustics.
 
 ## Music
 

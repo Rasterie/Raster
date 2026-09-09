@@ -2,10 +2,10 @@ use raster_math::IVec2;
 
 /// Which tile occupies a cell.
 ///
-/// Two bytes rather than an enum with data: a Terraria-like world holds
-/// millions of these, and every byte is multiplied by that. What a tile *means*
-/// — its collision, its texture, whether it can be mined — lives once in the
-/// tileset, not once per cell.
+/// Two bytes rather than an enum with data: a large world holds millions of
+/// these, and every byte is multiplied by that. What a tile *means* — its
+/// collision, its texture, whether it can be mined — lives once in the tileset,
+/// not once per cell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, PartialOrd, Ord)]
 pub struct TileId(pub u16);
 

@@ -62,8 +62,8 @@ accepts the cost.
 
 The cost is real and worth naming: iterating 50,000 actors of mixed types is
 slower here than in an ECS, because their data is not laid out contiguously by
-component. See "Where this model breaks" below for how a Terraria-like avoids
-paying it where it matters.
+component. See "Where this model breaks" below for how a game avoids paying it
+where it matters.
 
 **Not a node tree.** A `Sprite` is a component, not an entity. It has no
 independent existence, no transform of its own, and cannot be placed in a scene
@@ -210,7 +210,7 @@ is not to make the actor model faster; it is to not use actors for those.
 Particles are a Visual-domain system with their own tight storage. Same for
 projectiles, if a game needs thousands.
 
-**Tiles.** A Terraria-like world has millions of tiles. Tiles are emphatically
+**Tiles.** A large tile world holds millions of cells. Tiles are emphatically
 not actors: they are a chunked grid in `raster-2d`, stored as compact arrays.
 Only tiles with behaviour — a chest, a machine — get an associated actor.
 

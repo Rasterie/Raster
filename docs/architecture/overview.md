@@ -129,8 +129,8 @@ scaling, snapping rules, filtering policy).
 
 ### raster-2d
 The 2D content types that sit between core and the renderer: sprite components,
-tilemaps and chunking, animation state, cameras, parallax. This is where a
-Terraria-like world's structural needs live.
+tilemaps and chunking, animation state, cameras, parallax. This is where the
+structural needs of a large, mutable tile world live.
 
 ### raster-audio
 Cues, buses, mixing, 2D spatial attenuation, and the actor↔sound link. Delegates

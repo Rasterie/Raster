@@ -3,8 +3,8 @@ use raster_math::{IRect, IVec2};
 
 /// A fixed block of tiles, the unit a world is stored and streamed in.
 ///
-/// Chunking rather than one huge array: a Terraria-like world is far too large
-/// to hold at once, and the parts nobody is looking at should cost nothing.
+/// Chunking rather than one huge array: a world may be far too large to hold at
+/// once, and the parts nobody is looking at should cost nothing.
 #[derive(Debug, Clone)]
 pub struct Chunk {
     tiles: Vec<TileId>,

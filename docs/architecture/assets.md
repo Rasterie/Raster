@@ -135,7 +135,7 @@ which it is.
 - Whether scenes can nest, and if so how overrides on a nested scene work. This
   is Unity's prefab problem and it is genuinely hard; deferring it is reasonable,
   ignoring it forever is not.
-- Whether tilemaps are assets or part of scenes. For a Terraria-like the world is
-  generated and mutated at runtime, so it is probably neither — a save-file
-  concern rather than an asset one.
+- Whether tilemaps are assets or part of scenes. A world that is generated and
+  mutated at runtime is probably neither — a save-file concern rather than an
+  asset one.
 - How a shipped build packs assets: a single archive, or loose files.
