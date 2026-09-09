@@ -367,8 +367,9 @@ files, and that is deliberate — it proves the runtime stands on its own.
 
 **M4 done when:** the MVP's UI is built with `raster-ui`.
 
-**Checkpoint `[?]`:** is it good enough for the editor? If not, decide here to
-use `egui` for editor chrome — and record the decision in `docs/decisions/`.
+**Checkpoint:** answered — the editor uses `raster-ui` (decision 020). Scissor
+clipping lands in `raster-render` first: the scroll area, the dropdown and the
+tooltip all need it.
 
 ---
 
