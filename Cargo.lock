@@ -1444,6 +1444,14 @@ name = "raster-math"
 version = "0.0.0"
 
 [[package]]
+name = "raster-physics"
+version = "0.0.0"
+dependencies = [
+ "raster-2d",
+ "raster-math",
+]
+
+[[package]]
 name = "raster-render"
 version = "0.0.0"
 dependencies = [
@@ -1454,6 +1462,7 @@ dependencies = [
  "raster-core",
  "raster-input",
  "raster-math",
+ "raster-physics",
  "wgpu",
  "winit",
 ]
