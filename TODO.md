@@ -277,26 +277,28 @@ Enough engine for a real, if small, game.
 
 ## M2.5 Assets
 
-- [ ] `AssetId<T>` — typed, uuid-backed
-- [ ] `.meta` sidecar files
-- [ ] Project manifest, uuid → path
-- [ ] `Handle<T>` — reference counted, placeholder while loading
+- [x] `AssetId` — the path is the identity (decision 015)
+- [ ] `.meta` sidecar files — not needed until an asset carries import settings
+- [x] `Project` — the root assets are named relative to, found by its marker
+- [x] `AssetStore<T>` / `Handle<T>` — loaded once, handles stay valid
+- [x] Placeholder for a missing texture, reported once
 - [ ] Async loading on a worker pool
 - [ ] **Hot reload** — watch, reload, swap behind live handles
-- [ ] Import pipeline — PNG → Sprite, WAV → Cue
+- [x] PNG → texture, through `Textures`
+- [ ] Import pipeline — WAV → Cue
 - [ ] `asset!` macro resolving paths at compile time
 - [ ] Dependency tracking (a tileset depends on its sprite)
 
 ## M2.6 Scenes
 
-- [ ] Text format (TOML)
-- [ ] Save — write only fields that differ from type defaults
-- [ ] Load — instantiate via reflection
+- [x] Text format (TOML)
+- [x] Save — write only fields that differ from type defaults
+- [x] Load — instantiate via reflection
 - [ ] Multiple scenes loaded at once, each tracking its own actors
 - [ ] Unload a scene independently
 - [ ] `[?]` Nesting and overrides — the prefab problem; deferring is fine,
   ignoring forever is not
-- [ ] `tests/` — round-trip fidelity, unknown field tolerance, renamed fields
+- [x] `tests/` — round-trip fidelity, unknown field tolerance, renamed fields
 
 ## M2.7 Attachment
 
