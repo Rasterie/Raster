@@ -54,3 +54,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [017](017-audio-output.md) | Audio output: cpal directly, Resonance unlinked | Accepted |
 | [018](018-the-mvp-game.md) | The MVP game: a single-screen platformer | Accepted |
 | [019](019-bitmap-fonts.md) | Bitmap fonts: one built in, others loaded | Accepted |
+| [020](020-editor-toolkit.md) | The editor uses raster-ui, not egui | Accepted |

@@ -359,16 +359,19 @@ files, and that is deliberate — it proves the runtime stands on its own.
 - [ ] `[?]` Vector font support later, or never
 - [x] Theme tokens — colour and spacing, centralised in one place
 - [x] Widgets: text, button, checkbox, slider, panel, progress, radio, text
-  input, list, tabs, modal
-- [ ] Remaining: scroll area, split, tree, menu, tooltip
+  input, list, tabs, modal, scroll area, splitter, drag value, dropdown, tooltip
+- [x] Scissor clipping in `raster-render`, which the scroll area needs
+- [x] Mouse wheel and drag-and-drop routing
+- [ ] Remaining: tree widget
 - [ ] Animation and transitions using `raw_delta`
 - [ ] `.widget` asset loading (the designer is M8)
 - [x] Rebuild the M3 game's HUD and menus with it
 
 **M4 done when:** the MVP's UI is built with `raster-ui`.
 
-**Checkpoint `[?]`:** is it good enough for the editor? If not, decide here to
-use `egui` for editor chrome — and record the decision in `docs/decisions/`.
+**Checkpoint:** answered — the editor uses `raster-ui` (decision 020). Scissor
+clipping lands in `raster-render` first: the scroll area, the dropdown and the
+tooltip all need it.
 
 ---
 
@@ -376,23 +379,29 @@ use `egui` for editor chrome — and record the decision in `docs/decisions/`.
 
 The frame that holds the editors. Still no dedicated editors.
 
-- [ ] Editor binary, separate from the runtime
-- [ ] Docking — split, tab, float, resize
-- [ ] Layout persistence per project
-- [ ] Asset browser — tree, search, filter, drag and drop
-- [ ] **Global undo/redo** — one stack for every editor, not one per panel
-- [ ] Command pattern with coalescing (a drag is one undo entry)
-- [ ] **Reflection-driven inspector** — works on any `Reflect` type, honours
+- [x] Editor binary, separate from the runtime
+- [x] Docking — split and tab; float comes with a second window
+- [x] Layout persistence per project
+- [x] Asset browser — tree, search, filter
+- [ ] Drag and drop from the browser into the viewport
+- [x] **Global undo/redo** — one stack for every editor, not one per panel
+- [x] Command pattern with coalescing (a drag is one undo entry)
+- [x] **Reflection-driven inspector** — works on any `Reflect` type, honours
   `#[property]` attributes
-- [ ] Scene viewport — pan, zoom, grid, selection, box select
-- [ ] Gizmos — move, and scale where it applies
-- [ ] Snapping to grid and to pixels
+- [x] Scene viewport — zoom, grid, selection, box select
+- [x] Gizmos — move handles, constrained per axis
+- [x] Snapping to grid and to pixels
+- [x] Console — project state
 - [ ] Console — logs, warnings, errors, filtering
 - [ ] **Play in editor** — run the game in a panel, with live asset reload
 - [ ] Project creation and settings
-- [ ] Editor preferences
+- [x] Editor preferences — snap, grid, zoom, saved per project
 
 **M5 done when:** the MVP's level can be built by placing actors in the viewport
+
+Placing, moving, deleting, duplicating, saving and loading all work, each
+through the undo stack, with the editor'''s own key bindings. What remains:
+play-in-editor, and project creation from the editor.
 instead of by editing text.
 
 ---

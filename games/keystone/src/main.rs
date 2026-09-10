@@ -168,14 +168,10 @@ impl App for Keystone {
 
         // Le clic gauche est lie a ATTACK par defaut : c'est le pointeur du
         // menu, converti de la fenetre vers les pixels du jeu.
-        self.pointer = Pointer {
-            at: self
-                .camera
-                .screen_to_world(input.mouse_position(), self.window),
-            down: input.held(&Action::ATTACK),
-            pressed: input.pressed(&Action::ATTACK),
-            released: input.released(&Action::ATTACK),
-        };
+        let at = self
+            .camera
+            .screen_to_world(input.mouse_position(), self.window);
+        self.pointer = Pointer::from_input(input, at);
 
         match self.game.screen {
             Screen::Title | Screen::Dead | Screen::Won => {

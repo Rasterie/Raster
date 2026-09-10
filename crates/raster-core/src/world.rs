@@ -21,6 +21,10 @@ struct ErasedPool {
     len: fn(&dyn Any) -> usize,
     clear: fn(&mut dyn Any),
     contains: fn(&dyn Any, ActorId) -> bool,
+    /// L'acteur vu par la reflexion : ce qui permet a un inspecteur de le
+    /// decrire et de l'ecrire sans connaitre son type.
+    reflect: fn(&dyn Any, ActorId) -> Option<&dyn crate::reflect::ReflectObject>,
+    reflect_mut: fn(&mut dyn Any, ActorId) -> Option<&mut dyn crate::reflect::ReflectObject>,
     /// Une iteration par type de composant : c'est ce qui laisse le renderer
     /// parcourir tous les `Sprite` sans connaitre `Player`.
     components: HashMap<TypeId, ComponentIter>,
@@ -82,6 +86,25 @@ impl World {
     #[must_use]
     pub fn get_mut<T: Actor>(&mut self, id: ActorId) -> Option<&mut T> {
         self.pool_opt_mut::<T>()?.get_mut(id)
+    }
+
+    /// An actor seen through reflection, whatever its type.
+    ///
+    /// Ce dont un inspecteur a besoin : decrire un acteur selectionne sans
+    /// savoir ce qu'il est.
+    #[must_use]
+    pub fn reflect(&self, id: ActorId) -> Option<&dyn crate::reflect::ReflectObject> {
+        let tag = self.tags.get(id.type_tag() as usize)?;
+        let pool = self.pools.get(tag)?;
+        (pool.reflect)(pool.pool.as_ref(), id)
+    }
+
+    /// The same, to write a field back.
+    #[must_use]
+    pub fn reflect_mut(&mut self, id: ActorId) -> Option<&mut dyn crate::reflect::ReflectObject> {
+        let tag = self.tags.get(id.type_tag() as usize)?;
+        let pool = self.pools.get_mut(tag)?;
+        (pool.reflect_mut)(pool.pool.as_mut(), id)
     }
 
     /// Whether an id still refers to a live actor, without knowing its type.
@@ -233,6 +256,14 @@ impl World {
                     if let Some(p) = pool.downcast_mut::<Pool<T>>() {
                         p.clear();
                     }
+                },
+                reflect: |pool, id| {
+                    let actor = pool.downcast_ref::<Pool<T>>()?.get(id)?;
+                    Some(actor as &dyn crate::reflect::ReflectObject)
+                },
+                reflect_mut: |pool, id| {
+                    let actor = pool.downcast_mut::<Pool<T>>()?.get_mut(id)?;
+                    Some(actor as &mut dyn crate::reflect::ReflectObject)
                 },
                 components: HashMap::new(),
             });

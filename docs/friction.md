@@ -90,6 +90,6 @@ badly.
 **Points at:** M4. UI navigation actions belong with the UI toolkit, not in the
 gameplay action set.
 
-**Partly fixed:** `raster_ui::Keys` now carries confirm, cancel and navigation
-separately from gameplay actions. The game still has to fill it from `Action`,
-so the binding side of the problem stands.
+**Fixed:** `raster_ui::Keys` carries UI navigation separately, and the editor
+defines its own action set (`editor.undo`, `editor.save`, …) with its own
+bindings. A game and a tool no longer share a keymap.
