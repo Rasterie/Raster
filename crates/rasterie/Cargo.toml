@@ -1,0 +1,12 @@
+[package]
+name = "rasterie"
+version = "0.0.0"
+description = "Parametric pixel art: colour, shape grammar, and the rules of pixel art."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+raster-math = { path = "../raster-math" }
