@@ -64,6 +64,7 @@ pub(crate) fn translate_key(key: PhysicalKey) -> Option<Key> {
         KeyCode::Escape => Key::Escape,
         KeyCode::Tab => Key::Tab,
         KeyCode::Backspace => Key::Backspace,
+        KeyCode::Delete => Key::Delete,
         // Gauche et droite se rejoignent : un jeu qui doit les distinguer est
         // rare, et les separer obligerait chacun a lier les deux.
         KeyCode::ShiftLeft | KeyCode::ShiftRight => Key::Shift,
