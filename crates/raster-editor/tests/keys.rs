@@ -134,3 +134,33 @@ fn a_shortcut_fires_once_per_press() {
     input.begin_frame(1.0 / 60.0);
     assert!(!keys::read(&input).save, "le raccourci s'est repete");
 }
+
+#[test]
+fn the_game_bindings_answer_none_of_the_editor_shortcuts() {
+    // L'editeur doit poser ses propres liaisons : sans cela, Ctrl+Z ne fait
+    // rien, parce que `Input::default()` porte celles du jeu.
+    let mut input = Input::default();
+    input.key_down(Key::Control);
+    input.key_down(Key::Z);
+    input.key_down(Key::S);
+    input.begin_frame(1.0 / 60.0);
+
+    let shortcuts = keys::read(&input);
+    assert_eq!(
+        shortcuts,
+        keys::Shortcuts::default(),
+        "les liaisons du jeu ne doivent declencher aucun raccourci d'editeur"
+    );
+}
+
+#[test]
+fn installing_the_editor_bindings_makes_the_shortcuts_work() {
+    let mut input = Input::default();
+    *input.bindings_mut() = keys::bindings();
+
+    input.key_down(Key::Control);
+    input.key_down(Key::Z);
+    input.begin_frame(1.0 / 60.0);
+
+    assert!(keys::read(&input).undo, "poser les liaisons doit suffire");
+}

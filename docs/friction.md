@@ -93,3 +93,17 @@ gameplay action set.
 **Fixed:** `raster_ui::Keys` carries UI navigation separately, and the editor
 defines its own action set (`editor.undo`, `editor.save`, …) with its own
 bindings. A game and a tool no longer share a keymap.
+
+## 7. An application cannot declare its key bindings at startup
+
+`App::init` receives the GPU but not the input, so an application that needs
+its own bindings — the editor does — has to install them on the first `update`
+frame, behind a `bound: bool` guard.
+
+The editor shipped without them for a while as a result: `Input::default()`
+carries the *game*'''s layout, so every editor shortcut silently did nothing.
+Nothing failed, nothing warned; Ctrl+Z simply had no effect.
+
+**Points at:** `App::init` should receive `&mut Input`, or `App` should have a
+`bindings()` method the runtime calls before the first frame. Either removes
+the guard and the class of bug with it.

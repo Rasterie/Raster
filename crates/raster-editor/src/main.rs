@@ -53,6 +53,8 @@ struct EditorApp {
     status: String,
     /// La scene ouverte, relative au projet.
     scene: Option<String>,
+    /// Si les liaisons de l'editeur ont ete posees.
+    bound: bool,
     quit: bool,
 }
 
@@ -112,6 +114,7 @@ impl EditorApp {
             search: String::new(),
             status: "pret".to_owned(),
             scene: session.scene,
+            bound: false,
             quit: false,
         }
     }
@@ -254,6 +257,13 @@ impl App for EditorApp {
     }
 
     fn update(&mut self, input: &mut Input, _time: &raster_core::Time) {
+        // Les liaisons de l'editeur, posees a la premiere frame : `init` ne
+        // recoit pas l'entree, donc c'est le premier endroit ou on peut.
+        if !self.bound {
+            *input.bindings_mut() = keys::bindings();
+            self.bound = true;
+        }
+
         let at = self
             .camera
             .screen_to_world(input.mouse_position(), self.window);
