@@ -10,6 +10,7 @@ use raster_editor::browser::{Browser, Kind};
 use raster_editor::commands::{Despawn, Editing, MoveActors, SetField, Spawn};
 use raster_editor::inspector::{self, Editor};
 use raster_editor::keys::{self, Shortcuts};
+use raster_editor::play;
 use raster_editor::viewport::Viewport;
 use raster_editor::{Dock, History, Node, Placement};
 use raster_input::Input;
@@ -55,6 +56,8 @@ struct EditorApp {
     scene: Option<String>,
     /// Si les liaisons de l'editeur ont ete posees.
     bound: bool,
+    /// La partie en cours, s'il y en a une.
+    play: play::Session,
     quit: bool,
 }
 
@@ -115,6 +118,7 @@ impl EditorApp {
             status: "pret".to_owned(),
             scene: session.scene,
             bound: false,
+            play: play::Session::new(),
             quit: false,
         }
     }
@@ -159,6 +163,23 @@ impl EditorApp {
                 Ok(n) => format!("{n} acteur(s) charge(s)"),
                 Err(e) => e,
             };
+        }
+
+        // Lancer et arreter la partie.
+        if shortcuts.play {
+            if self.play.state().in_session() {
+                let restored = self.play.stop(&mut self.editing).unwrap_or(0);
+                self.viewport.clear_selection();
+                self.status = format!("arrete, {restored} acteur(s) restaure(s)");
+            } else {
+                self.play.start(&self.editing);
+                self.viewport.clear_selection();
+                self.status = "partie lancee".to_owned();
+            }
+        }
+        if shortcuts.pause && self.play.state().in_session() {
+            self.play.toggle_pause();
+            self.status = format!("partie {}", self.play.state().label());
         }
 
         if shortcuts.toggle_snap {
@@ -277,6 +298,11 @@ impl App for EditorApp {
 
         let shortcuts = keys::read(input);
         self.apply_shortcuts(shortcuts);
+    }
+
+    fn fixed_update(&mut self, _input: &Input, dt: f32) {
+        // Pendant une partie, le monde avance ; en edition, il reste fige.
+        self.play.tick(dt);
     }
 
     fn resized(&mut self, width: u32, height: u32) {

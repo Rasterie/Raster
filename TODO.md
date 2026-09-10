@@ -393,7 +393,8 @@ The frame that holds the editors. Still no dedicated editors.
 - [x] Snapping to grid and to pixels
 - [x] Console — project state
 - [ ] Console — logs, warnings, errors, filtering
-- [ ] **Play in editor** — run the game in a panel, with live asset reload
+- [x] **Play in editor** — the world runs, the edited state is restored on stop
+  (decision 021)
 - [ ] Project creation and settings
 - [x] Editor preferences — snap, grid, zoom, saved per project
 
