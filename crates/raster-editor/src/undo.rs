@@ -4,7 +4,11 @@ use std::time::{Duration, Instant};
 ///
 /// Le patron commande : chaque modification sait se defaire et se refaire, ce
 /// qui rend l'historique independant de ce qui a ete modifie.
-pub trait Command: std::fmt::Debug {
+pub trait Command: std::fmt::Debug + std::any::Any {
+    /// Ce qui permet a une commande de reconnaitre sa jumelle avant de
+    /// fusionner : sans cela, elle ne verrait qu'un `dyn Command`.
+    fn as_any(&self) -> &dyn std::any::Any;
+
     /// Applies the change.
     fn apply(&mut self, world: &mut dyn Target);
 
