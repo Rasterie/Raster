@@ -417,12 +417,13 @@ sprites, and the shared canvas and palette model gets established here.
 Designed before the second editor exists, or the third forces a rewrite of the
 first two.
 
-- [ ] Canvas — pan, zoom, pixel grid, checkerboard, rulers
+- [x] Canvas — pan, zoom, pixel grid, checkerboard
+- [ ] Canvas — rulers
 - [ ] Selection — rectangle, lasso, magic wand, by colour
-- [ ] Palette model shared across every Visual editor
-- [ ] Frame model shared between sprite and animation
+- [x] Palette model shared across every Visual editor
+- [x] Frame model shared between sprite and animation
 - [ ] Preview surface
-- [ ] Tool framework — brush, eraser, fill, picker, shapes
+- [x] Tool framework — brush, eraser, fill, line, rectangle, ellipse
 
 ## M6.2 Rasterie port to Rust `[!]`
 
