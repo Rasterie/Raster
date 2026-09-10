@@ -399,11 +399,11 @@ The frame that holds the editors. Still no dedicated editors.
 - [x] Editor preferences — snap, grid, zoom, saved per project
 
 **M5 done when:** the MVP's level can be built by placing actors in the viewport
-
-Placing, moving, deleting, duplicating, saving and loading all work, each
-through the undo stack, with the editor'''s own key bindings. What remains:
-play-in-editor, and project creation from the editor.
 instead of by editing text.
+
+Placing, moving, deleting, duplicating, saving, loading and playing all work,
+each through the undo stack, with the editor's own key bindings. What remains:
+project creation from the editor.
 
 ---
 
