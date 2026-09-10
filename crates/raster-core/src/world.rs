@@ -25,6 +25,9 @@ struct ErasedPool {
     /// decrire et de l'ecrire sans connaitre son type.
     reflect: fn(&dyn Any, ActorId) -> Option<&dyn crate::reflect::ReflectObject>,
     reflect_mut: fn(&mut dyn Any, ActorId) -> Option<&mut dyn crate::reflect::ReflectObject>,
+    /// Les identifiants du pool : ce qui permet de parcourir un monde entier
+    /// sans connaitre aucun de ses types.
+    ids: fn(&dyn Any, &mut Vec<ActorId>),
     /// Une iteration par type de composant : c'est ce qui laisse le renderer
     /// parcourir tous les `Sprite` sans connaitre `Player`.
     components: HashMap<TypeId, ComponentIter>,
@@ -86,6 +89,19 @@ impl World {
     #[must_use]
     pub fn get_mut<T: Actor>(&mut self, id: ActorId) -> Option<&mut T> {
         self.pool_opt_mut::<T>()?.get_mut(id)
+    }
+
+    /// Every live actor, whatever its type.
+    ///
+    /// L'ordre suit celui des pools, donc celui d'enregistrement des types :
+    /// stable d'un appel a l'autre, mais sans signification propre.
+    #[must_use]
+    pub fn actor_ids(&self) -> Vec<ActorId> {
+        let mut out = Vec::with_capacity(self.len());
+        for pool in self.pools.values() {
+            (pool.ids)(pool.pool.as_ref(), &mut out);
+        }
+        out
     }
 
     /// An actor seen through reflection, whatever its type.
@@ -264,6 +280,11 @@ impl World {
                 reflect_mut: |pool, id| {
                     let actor = pool.downcast_mut::<Pool<T>>()?.get_mut(id)?;
                     Some(actor as &mut dyn crate::reflect::ReflectObject)
+                },
+                ids: |pool, out| {
+                    if let Some(p) = pool.downcast_ref::<Pool<T>>() {
+                        out.extend(p.iter().map(|(id, _)| id));
+                    }
                 },
                 components: HashMap::new(),
             });

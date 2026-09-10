@@ -102,6 +102,23 @@ impl Scene {
         });
     }
 
+    /// Adds an actor already seen through reflection.
+    ///
+    /// Ce qu'un editeur a sous la main : un acteur dont il ignore le type.
+    /// Contrairement a [`Scene::add`], tous les champs sont ecrits — les
+    /// valeurs par defaut du type ne sont pas connues d'ici.
+    pub fn add_erased(&mut self, object: &dyn crate::reflect::ReflectObject) {
+        let fields = match object.to_value() {
+            Value::Struct(fields) => fields,
+            _ => BTreeMap::new(),
+        };
+
+        self.instances.push(Instance {
+            type_name: object.type_info().name.to_owned(),
+            fields,
+        });
+    }
+
     /// Reads a scene from disk.
     ///
     /// # Errors
