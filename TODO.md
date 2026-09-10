@@ -427,10 +427,10 @@ first two.
 
 ## M6.2 Rasterie port to Rust `[!]`
 
-- [~] Port `rasterie-engine` from TypeScript to Rust — colour done
+- [~] Port `rasterie-engine` from TypeScript to Rust — colour and shapes done
 - [ ] Keep the web version working — this is a port, not a migration
 - [x] Colour: OKLCH, ramps, hue shifting
-- [ ] Shape grammar
+- [x] Shape grammar — 7 silhouettes, 5 corners, 4 fills
 - [ ] Pixel art rules: cluster size, orphan pixels, canonical slopes
 - [ ] Dithering
 - [ ] Validation and audit
