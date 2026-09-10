@@ -55,3 +55,4 @@ What this makes easy, what it makes hard, what it forecloses.
 | [018](018-the-mvp-game.md) | The MVP game: a single-screen platformer | Accepted |
 | [019](019-bitmap-fonts.md) | Bitmap fonts: one built in, others loaded | Accepted |
 | [020](020-editor-toolkit.md) | The editor uses raster-ui, not egui | Accepted |
+| [021](021-play-in-editor.md) | Play in editor: the world ticks, the editor draws | Accepted |
