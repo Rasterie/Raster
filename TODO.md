@@ -427,14 +427,15 @@ first two.
 
 ## M6.2 Rasterie port to Rust `[!]`
 
-- [ ] Port `rasterie-engine` from TypeScript to Rust
+- [~] Port `rasterie-engine` from TypeScript to Rust — colour done
 - [ ] Keep the web version working — this is a port, not a migration
-- [ ] Colour: OKLCH, ramps, hue shifting
+- [x] Colour: OKLCH, ramps, hue shifting
 - [ ] Shape grammar
 - [ ] Pixel art rules: cluster size, orphan pixels, canonical slopes
 - [ ] Dithering
 - [ ] Validation and audit
-- [ ] Verify parity against the TypeScript test suite
+- [x] Verify parity against the TypeScript output — colour and ramps
+- [ ] Verify parity for the rest, as each module is ported
 
 ## M6.3 Sprite editor
 
