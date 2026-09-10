@@ -5,12 +5,14 @@
 use raster_core::ActorId;
 use raster_core::asset::Project;
 use raster_core::reflect::{Reflect, TypeRegistry, Value};
+use raster_editor::Session;
 use raster_editor::browser::{Browser, Kind};
 use raster_editor::commands::{Despawn, Editing, MoveActors, SetField, Spawn};
 use raster_editor::inspector::{self, Editor};
+use raster_editor::keys::{self, Shortcuts};
 use raster_editor::viewport::Viewport;
 use raster_editor::{Dock, History, Node, Placement};
-use raster_input::{Action, Input};
+use raster_input::Input;
 use raster_math::{Rect, Vec2};
 use raster_render::{App, Camera, Colour, Gpu, RenderTarget, SpriteBatch, Texture, WindowConfig};
 use raster_ui::layout::{self, Axis};
@@ -49,6 +51,8 @@ struct EditorApp {
     search: String,
     /// La derniere chose que l'editeur a faite, montree dans la console.
     status: String,
+    /// La scene ouverte, relative au projet.
+    scene: Option<String>,
     quit: bool,
 }
 
@@ -79,12 +83,23 @@ impl EditorApp {
             solid: false,
         });
 
+        // La session du projet, ou la disposition par defaut.
+        let session = project.as_ref().map_or_else(
+            || Session::new(Dock::new(shell_layout())),
+            |p| Session::load(p.root(), Dock::new(shell_layout())),
+        );
+
+        let mut viewport = Viewport::new();
+        viewport.snap = session.snap;
+        viewport.show_grid = session.show_grid;
+        viewport.zoom = session.zoom;
+
         Self {
             project,
             browser,
             editing,
-            dock: Dock::new(shell_layout()),
-            viewport: Viewport::new(),
+            dock: session.dock,
+            viewport,
             history: History::new(),
             ui: Ui::new(Theme::dark()),
             batch: None,
@@ -96,7 +111,97 @@ impl EditorApp {
             window: Vec2::new(WIDTH as f32, HEIGHT as f32),
             search: String::new(),
             status: "pret".to_owned(),
+            scene: session.scene,
             quit: false,
+        }
+    }
+
+    /// Ce que les raccourcis declenchent.
+    fn apply_shortcuts(&mut self, shortcuts: Shortcuts) {
+        if shortcuts.quit {
+            self.save_session();
+            self.quit = true;
+        }
+
+        if shortcuts.undo {
+            self.history.undo(&mut self.editing);
+            self.drop_dead_selection();
+        }
+        if shortcuts.redo {
+            self.history.redo(&mut self.editing);
+            self.drop_dead_selection();
+        }
+
+        if shortcuts.delete {
+            for actor in self.viewport.selection().to_vec() {
+                self.history
+                    .push(Box::new(Despawn::new(actor)), &mut self.editing);
+            }
+            self.viewport.clear_selection();
+        }
+
+        if shortcuts.duplicate {
+            self.duplicate_selection();
+        }
+
+        if shortcuts.save {
+            self.status = match save_scene(self) {
+                Ok(path) => format!("enregistre : {}", path.display()),
+                Err(e) => e,
+            };
+        }
+
+        if shortcuts.open {
+            self.status = match load_scene(self) {
+                Ok(n) => format!("{n} acteur(s) charge(s)"),
+                Err(e) => e,
+            };
+        }
+
+        if shortcuts.toggle_snap {
+            self.viewport.snap = !self.viewport.snap;
+        }
+        if shortcuts.toggle_grid {
+            self.viewport.show_grid = !self.viewport.show_grid;
+        }
+    }
+
+    /// Une selection qui survit a une suppression pointerait dans le vide.
+    fn drop_dead_selection(&mut self) {
+        let world = &self.editing.world;
+        self.viewport.retain_selection(|id| world.contains(id));
+    }
+
+    /// Duplique la selection, decalee d'une tuile pour qu'elle se voie.
+    fn duplicate_selection(&mut self) {
+        let copies: Vec<Vec2> = self
+            .viewport
+            .selection()
+            .iter()
+            .filter_map(|id| self.editing.world.get::<Prop>(*id))
+            .map(|prop| prop.position + Vec2::splat(self.viewport.grid))
+            .collect();
+
+        for at in copies {
+            self.history
+                .push(Box::new(Spawn::new("Prop", at)), &mut self.editing);
+        }
+    }
+
+    /// Enregistre la disposition et les reglages, s'il y a un projet.
+    fn save_session(&self) {
+        let Some(project) = &self.project else {
+            return;
+        };
+
+        let mut session = Session::new(self.dock.clone());
+        session.snap = self.viewport.snap;
+        session.show_grid = self.viewport.show_grid;
+        session.zoom = self.viewport.zoom;
+        session.scene = self.scene.clone();
+
+        if let Err(e) = session.save(project.root()) {
+            eprintln!("la session n'a pas pu etre enregistree : {e}");
         }
     }
 
@@ -155,43 +260,13 @@ impl App for EditorApp {
         self.pointer = Pointer::from_input(input, at);
 
         self.keys = Keys {
-            confirm: input.pressed(&Action::JUMP),
+            confirm: input.pressed(&raster_input::Action::new("editor.confirm")),
             backspace: false,
             ..Keys::default()
         };
 
-        if input.pressed(&Action::PAUSE) {
-            self.quit = true;
-        }
-
-        // Les raccourcis. Faute d'actions d'editeur dediees, ils empruntent
-        // les touches du jeu — voir `docs/friction.md`.
-        if input.pressed(&Action::INTERACT) {
-            self.history.undo(&mut self.editing);
-            let world = &self.editing.world;
-            self.viewport.retain_selection(|id| world.contains(id));
-        }
-        if input.pressed(&Action::ATTACK) && input.held(&Action::JUMP) {
-            self.history.redo(&mut self.editing);
-        }
-
-        // Supprime ce qui est selectionne.
-        if input.pressed(&Action::ATTACK) && input.held(&Action::INTERACT) {
-            for actor in self.viewport.selection().to_vec() {
-                self.history
-                    .push(Box::new(Despawn::new(actor)), &mut self.editing);
-            }
-            self.viewport.clear_selection();
-        }
-
-        // Enregistre la scene. Sans raccourci clavier dedie, la touche du
-        // menu sert : le vrai raccourci viendra avec les preferences.
-        if input.pressed(&Action::JUMP) && input.held(&Action::INTERACT) {
-            self.status = match save_scene(self) {
-                Ok(path) => format!("enregistre : {}", path.display()),
-                Err(e) => e,
-            };
-        }
+        let shortcuts = keys::read(input);
+        self.apply_shortcuts(shortcuts);
     }
 
     fn resized(&mut self, width: u32, height: u32) {
@@ -655,6 +730,29 @@ fn draw_console(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter,
     }
 }
 
+/// Recharge la scene depuis le disque, remplacant ce qui est ouvert.
+///
+/// L'historique est vide : les commandes d'avant designent des acteurs qui
+/// n'existent plus, et annuler apres un chargement n'a pas de sens.
+fn load_scene(app: &mut EditorApp) -> Result<usize, String> {
+    let project = app.project.as_ref().ok_or("aucun projet ouvert")?;
+    let path = project.root().join("scene.scene.toml");
+
+    let scene = raster_core::Scene::load(&path, &app.editing.registry)
+        .map_err(|e| format!("le chargement a echoue : {e}"))?;
+
+    app.editing.world.clear();
+    app.viewport.clear_selection();
+
+    let poses = scene
+        .spawn_into(&mut app.editing.world, &app.editing.registry)
+        .map_err(|e| format!("la scene n'a pas pu etre posee : {e}"))?;
+
+    app.history.clear();
+    app.scene = Some("scene.scene.toml".to_owned());
+    Ok(poses.len())
+}
+
 /// Ecrit la scene sous forme de fichier, celui que le runtime sait charger.
 fn save_scene(app: &mut EditorApp) -> Result<std::path::PathBuf, String> {
     let project = app.project.as_ref().ok_or("aucun projet ouvert")?;
@@ -670,6 +768,7 @@ fn save_scene(app: &mut EditorApp) -> Result<std::path::PathBuf, String> {
         .map_err(|e| format!("l'enregistrement a echoue : {e}"))?;
 
     app.history.mark_saved();
+    app.scene = Some("scene.scene.toml".to_owned());
     Ok(path)
 }
 
