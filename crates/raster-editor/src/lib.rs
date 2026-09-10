@@ -6,12 +6,16 @@ pub mod browser;
 pub mod commands;
 pub mod dock;
 pub mod inspector;
+pub mod keys;
+pub mod session;
 pub mod undo;
 pub mod viewport;
 
 pub use browser::{Browser, Entry, Kind};
 pub use commands::{Despawn, Editing, MoveActors, SetField, Spawn};
 pub use dock::{Dock, Node, Placement};
-pub use inspector::{Editor, Row};
+pub use inspector::{Editor as FieldEditor, Row};
+pub use keys::{Editor, Shortcuts};
+pub use session::Session;
 pub use undo::{Command, History, Target, target_as};
 pub use viewport::{Handle, Mode, Viewport};

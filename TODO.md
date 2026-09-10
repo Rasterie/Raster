@@ -381,7 +381,7 @@ The frame that holds the editors. Still no dedicated editors.
 
 - [x] Editor binary, separate from the runtime
 - [x] Docking — split and tab; float comes with a second window
-- [ ] Layout persistence per project
+- [x] Layout persistence per project
 - [x] Asset browser — tree, search, filter
 - [ ] Drag and drop from the browser into the viewport
 - [x] **Global undo/redo** — one stack for every editor, not one per panel
@@ -395,13 +395,13 @@ The frame that holds the editors. Still no dedicated editors.
 - [ ] Console — logs, warnings, errors, filtering
 - [ ] **Play in editor** — run the game in a panel, with live asset reload
 - [ ] Project creation and settings
-- [ ] Editor preferences
+- [x] Editor preferences — snap, grid, zoom, saved per project
 
 **M5 done when:** the MVP's level can be built by placing actors in the viewport
 
-Placing, moving, deleting and saving all work, each through the undo stack. What
-remains before the milestone closes: loading a scene back into the editor,
-layout persistence, play-in-editor, and dedicated editor key bindings.
+Placing, moving, deleting, duplicating, saving and loading all work, each
+through the undo stack, with the editor'''s own key bindings. What remains:
+play-in-editor, and project creation from the editor.
 instead of by editing text.
 
 ---
