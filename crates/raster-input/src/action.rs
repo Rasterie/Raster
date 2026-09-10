@@ -6,6 +6,12 @@ use std::collections::HashMap;
 pub struct Action(pub &'static str);
 
 impl Action {
+    /// Names an action. Un jeu et un editeur en definissent chacun les leurs.
+    #[must_use]
+    pub const fn new(name: &'static str) -> Self {
+        Self(name)
+    }
+
     pub const JUMP: Self = Self("jump");
     pub const ATTACK: Self = Self("attack");
     pub const INTERACT: Self = Self("interact");
@@ -90,6 +96,7 @@ pub enum Key {
     Escape,
     Tab,
     Backspace,
+    Delete,
     Shift,
     Control,
     Alt,
