@@ -1,0 +1,16 @@
+[package]
+name = "raster-ed-visual"
+version = "0.0.0"
+description = "What every Visual editor shares: canvas, palette, frames, tools."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+raster-core = { path = "../../raster-core" }
+raster-math = { path = "../../raster-math" }
+raster-render = { path = "../../raster-render" }
+raster-ui = { path = "../../raster-ui" }
+raster-editor = { path = "../../raster-editor" }

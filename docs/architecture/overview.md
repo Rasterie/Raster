@@ -44,6 +44,7 @@ raster/
 │   ├── raster-script/          the scripting boundary (see scripting.md)
 │   ├── raster-editor/          the editor shell: docking, undo, asset browser
 │   ├── editors/
+│   │   ├── raster-ed-visual/   Visual: what every Visual editor shares
 │   │   ├── raster-ed-sprite/   Visual: the sprite editor (Rasterie)
 │   │   ├── raster-ed-tilemap/  Visual: tileset and tilemap painting
 │   │   ├── raster-ed-anim/     Visual: animation timeline
