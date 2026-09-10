@@ -111,7 +111,12 @@ impl<T> Pool<T> {
     }
 
     pub(crate) fn clear(&mut self) {
-        self.slots.clear();
+        // Les emplacements restent, vides : l'allocateur les garde en
+        // circulation pour ne pas ressusciter d'identifiants morts, et reduire
+        // `slots` ferait diverger les deux.
+        for slot in &mut self.slots {
+            *slot = None;
+        }
         self.generations.clear();
     }
 }

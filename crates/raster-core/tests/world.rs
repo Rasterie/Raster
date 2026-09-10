@@ -416,3 +416,57 @@ fn many_actors_of_many_types_coexist() {
     let sum: u32 = world.values::<Player>().map(|p| p.health).sum();
     assert_eq!(sum, (0..1_000).sum::<u32>());
 }
+
+#[test]
+fn spawning_after_a_clear_works() {
+    // Changer de niveau, c'est vider puis reposer. L'allocateur garde ses
+    // emplacements en circulation, donc les vider entierement le ferait
+    // diverger du pool.
+    let mut world = World::new();
+    for _ in 0..5 {
+        world.spawn(Player::default());
+    }
+
+    world.clear();
+    assert_eq!(world.count::<Player>(), 0);
+
+    let id = world.spawn(Player::default());
+    assert!(
+        world.contains(id),
+        "l'acteur pose apres un vidage a disparu"
+    );
+    assert_eq!(world.count::<Player>(), 1);
+}
+
+#[test]
+fn ids_from_before_a_clear_never_come_back() {
+    let mut world = World::new();
+    let avant: Vec<_> = (0..3).map(|_| world.spawn(Player::default())).collect();
+
+    world.clear();
+    let apres: Vec<_> = (0..3).map(|_| world.spawn(Player::default())).collect();
+
+    for ancien in &avant {
+        assert!(
+            !apres.contains(ancien),
+            "un identifiant d'avant le vidage a ete rendu a nouveau"
+        );
+        assert!(!world.contains(*ancien), "un ancien identifiant est vivant");
+    }
+}
+
+#[test]
+fn a_world_survives_many_clear_and_spawn_cycles() {
+    // Ce que fait un editeur qui lance et arrete une partie en boucle.
+    let mut world = World::new();
+
+    for tour in 0..20 {
+        for _ in 0..10 {
+            world.spawn(Player::default());
+        }
+        assert_eq!(world.count::<Player>(), 10, "tour {tour}");
+        world.clear();
+    }
+
+    assert_eq!(world.count::<Player>(), 0);
+}
