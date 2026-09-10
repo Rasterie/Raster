@@ -23,6 +23,10 @@ impl Editor {
     /// Le second modificateur, pour refaire.
     pub const SHIFT: Action = Action::new("editor.shift");
     pub const QUIT: Action = Action::new("editor.quit");
+    /// Lance ou arrete la partie.
+    pub const PLAY: Action = Action::new("editor.play");
+    /// Met la partie en pause.
+    pub const PAUSE: Action = Action::new("editor.pause");
 }
 
 /// The editor's key bindings.
@@ -48,6 +52,8 @@ pub fn bindings() -> Bindings {
     bindings.bind(Editor::SNAP, Binding::Key(Key::G));
     bindings.bind(Editor::GRID, Binding::Key(Key::H));
     bindings.bind(Editor::QUIT, Binding::Key(Key::Escape));
+    bindings.bind(Editor::PLAY, Binding::Key(Key::F5));
+    bindings.bind(Editor::PAUSE, Binding::Key(Key::F6));
 
     bindings
 }
@@ -67,6 +73,8 @@ pub struct Shortcuts {
     pub toggle_snap: bool,
     pub toggle_grid: bool,
     pub quit: bool,
+    pub play: bool,
+    pub pause: bool,
 }
 
 /// Reads the shortcuts from the input.
@@ -87,5 +95,7 @@ pub fn read(input: &raster_input::Input) -> Shortcuts {
         toggle_snap: !ctrl && input.pressed(&Editor::SNAP),
         toggle_grid: !ctrl && input.pressed(&Editor::GRID),
         quit: input.pressed(&Editor::QUIT),
+        play: input.pressed(&Editor::PLAY),
+        pause: input.pressed(&Editor::PAUSE),
     }
 }
