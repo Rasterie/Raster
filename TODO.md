@@ -379,17 +379,19 @@ tooltip all need it.
 
 The frame that holds the editors. Still no dedicated editors.
 
-- [ ] Editor binary, separate from the runtime
+- [x] Editor binary, separate from the runtime
 - [x] Docking — split and tab; float comes with a second window
 - [ ] Layout persistence per project
-- [ ] Asset browser — tree, search, filter, drag and drop
+- [x] Asset browser — tree, search, filter
+- [ ] Drag and drop from the browser into the viewport
 - [x] **Global undo/redo** — one stack for every editor, not one per panel
 - [x] Command pattern with coalescing (a drag is one undo entry)
 - [x] **Reflection-driven inspector** — works on any `Reflect` type, honours
   `#[property]` attributes
-- [ ] Scene viewport — pan, zoom, grid, selection, box select
-- [ ] Gizmos — move, and scale where it applies
-- [ ] Snapping to grid and to pixels
+- [x] Scene viewport — zoom, grid, selection, box select
+- [x] Gizmos — move handles, constrained per axis
+- [x] Snapping to grid and to pixels
+- [x] Console — project state
 - [ ] Console — logs, warnings, errors, filtering
 - [ ] **Play in editor** — run the game in a panel, with live asset reload
 - [ ] Project creation and settings
