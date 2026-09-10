@@ -8,6 +8,10 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[[bin]]
+name = "raster-editor"
+path = "src/main.rs"
+
 [dependencies]
 raster-core = { path = "../raster-core" }
 raster-math = { path = "../raster-math" }
