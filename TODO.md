@@ -398,6 +398,10 @@ The frame that holds the editors. Still no dedicated editors.
 - [ ] Editor preferences
 
 **M5 done when:** the MVP's level can be built by placing actors in the viewport
+
+Placing, moving, deleting and saving all work, each through the undo stack. What
+remains before the milestone closes: loading a scene back into the editor,
+layout persistence, play-in-editor, and dedicated editor key bindings.
 instead of by editing text.
 
 ---
