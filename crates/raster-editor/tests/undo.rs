@@ -17,6 +17,9 @@ impl Target for Scene {
 struct Add(i32);
 
 impl Command for Add {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn apply(&mut self, world: &mut dyn Target) {
         scene(world).values.push(self.0);
     }
@@ -36,6 +39,9 @@ struct Move {
 }
 
 impl Command for Move {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn apply(&mut self, world: &mut dyn Target) {
         if let Some(last) = scene(world).values.last_mut() {
             *last = self.to;
@@ -51,23 +57,12 @@ impl Command for Move {
     }
     fn merge(&mut self, other: &dyn Command) -> bool {
         // Absorbe la destination du suivant, en gardant l'origine du premier.
-        if let Some(next) = downcast_move(other) {
-            self.to = next.to;
-            return true;
-        }
-        false
+        let Some(next) = other.as_any().downcast_ref::<Self>() else {
+            return false;
+        };
+        self.to = next.to;
+        true
     }
-}
-
-/// `dyn Command` n'est pas `Any` : on reconnait par l'etiquette, ce qui suffit
-/// pour un test.
-fn downcast_move(command: &dyn Command) -> Option<Move> {
-    let label = command.label();
-    let value = label.strip_prefix("Deplace vers ")?;
-    Some(Move {
-        from: 0,
-        to: value.parse().ok()?,
-    })
 }
 
 /// La commande retrouve sa cible par transtypage, sans `unsafe`.
