@@ -2,10 +2,11 @@
 //!
 //! `cargo run -p raster-editor -- <dossier du projet>`
 
+use raster_core::ActorId;
 use raster_core::asset::Project;
-use raster_core::reflect::{Reflect, Value};
-use raster_core::{ActorId, World};
+use raster_core::reflect::{Reflect, TypeRegistry, Value};
 use raster_editor::browser::{Browser, Kind};
+use raster_editor::commands::{Despawn, Editing, MoveActors, SetField, Spawn};
 use raster_editor::inspector::{self, Editor};
 use raster_editor::viewport::Viewport;
 use raster_editor::{Dock, History, Node, Placement};
@@ -32,7 +33,8 @@ struct Prop {
 struct EditorApp {
     project: Option<Project>,
     browser: Browser,
-    world: World,
+    /// Le monde et son registre : ce que les commandes modifient.
+    editing: Editing,
     dock: Dock,
     viewport: Viewport,
     history: History,
@@ -45,6 +47,8 @@ struct EditorApp {
     keys: Keys,
     window: Vec2,
     search: String,
+    /// La derniere chose que l'editeur a faite, montree dans la console.
+    status: String,
     quit: bool,
 }
 
@@ -57,15 +61,18 @@ impl EditorApp {
             eprintln!("le projet n'a pas pu etre lu : {e}");
         }
 
-        let mut world = World::new();
+        let mut registry = TypeRegistry::new();
+        registry.register::<Prop>();
+        let mut editing = Editing::new(registry);
+
         // Deux acteurs pour avoir quelque chose a selectionner.
-        world.spawn(Prop {
+        editing.world.spawn(Prop {
             position: Vec2::new(32.0, 32.0),
             scale: 1.0,
             name: "mur".to_owned(),
             solid: true,
         });
-        world.spawn(Prop {
+        editing.world.spawn(Prop {
             position: Vec2::new(96.0, 64.0),
             scale: 1.0,
             name: "caisse".to_owned(),
@@ -75,7 +82,7 @@ impl EditorApp {
         Self {
             project,
             browser,
-            world,
+            editing,
             dock: Dock::new(shell_layout()),
             viewport: Viewport::new(),
             history: History::new(),
@@ -88,13 +95,15 @@ impl EditorApp {
             keys: Keys::default(),
             window: Vec2::new(WIDTH as f32, HEIGHT as f32),
             search: String::new(),
+            status: "pret".to_owned(),
             quit: false,
         }
     }
 
     /// Les acteurs de la scene, avec leur rectangle dans le monde.
     fn actors(&self) -> Vec<(ActorId, Rect, String)> {
-        self.world
+        self.editing
+            .world
             .iter::<Prop>()
             .map(|(id, prop)| {
                 let size = 16.0 * prop.scale.max(0.25);
@@ -153,6 +162,35 @@ impl App for EditorApp {
 
         if input.pressed(&Action::PAUSE) {
             self.quit = true;
+        }
+
+        // Les raccourcis. Faute d'actions d'editeur dediees, ils empruntent
+        // les touches du jeu — voir `docs/friction.md`.
+        if input.pressed(&Action::INTERACT) {
+            self.history.undo(&mut self.editing);
+            let world = &self.editing.world;
+            self.viewport.retain_selection(|id| world.contains(id));
+        }
+        if input.pressed(&Action::ATTACK) && input.held(&Action::JUMP) {
+            self.history.redo(&mut self.editing);
+        }
+
+        // Supprime ce qui est selectionne.
+        if input.pressed(&Action::ATTACK) && input.held(&Action::INTERACT) {
+            for actor in self.viewport.selection().to_vec() {
+                self.history
+                    .push(Box::new(Despawn::new(actor)), &mut self.editing);
+            }
+            self.viewport.clear_selection();
+        }
+
+        // Enregistre la scene. Sans raccourci clavier dedie, la touche du
+        // menu sert : le vrai raccourci viendra avec les preferences.
+        if input.pressed(&Action::JUMP) && input.held(&Action::INTERACT) {
+            self.status = match save_scene(self) {
+                Ok(path) => format!("enregistre : {}", path.display()),
+                Err(e) => e,
+            };
         }
     }
 
@@ -307,6 +345,7 @@ fn draw_assets(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter, 
 
 fn draw_scene(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter, area: Rect) {
     let theme = *app.ui.theme();
+    handle_scene_input(app, area);
     let previous = batch.push_clip(area);
     painter.rect(batch, area, theme.background);
 
@@ -376,6 +415,65 @@ fn draw_scene(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter, a
     );
 }
 
+/// Ce que la souris fait dans le viewport : poser, choisir, deplacer.
+fn handle_scene_input(app: &mut EditorApp, area: Rect) {
+    let pointer = app.ui.pointer();
+    if !area.contains(pointer.at) {
+        return;
+    }
+
+    let world_at = app.viewport.to_world(area, pointer.at);
+
+    // Molette : zoome autour du curseur.
+    if pointer.wheel != 0.0 {
+        app.viewport
+            .zoom_at(area, pointer.at, if pointer.wheel < 0.0 { 1 } else { -1 });
+    }
+
+    // Un clic sur le vide pose un acteur ; sur un acteur, le choisit.
+    if pointer.pressed {
+        let touched = app
+            .actors()
+            .into_iter()
+            .find(|(_, bounds, _)| bounds.contains(world_at))
+            .map(|(id, _, _)| id);
+
+        match touched {
+            Some(id) => {
+                app.viewport.select(id);
+                app.viewport
+                    .begin_drag(world_at, raster_editor::viewport::Mode::Move);
+            }
+            None => {
+                let at = app.viewport.snapped(world_at);
+                app.history
+                    .push(Box::new(Spawn::new("Prop", at)), &mut app.editing);
+
+                // Le dernier pose est celui qu'on vient de creer.
+                if let Some((id, _)) = app.editing.world.iter::<Prop>().last() {
+                    app.viewport.select(id);
+                }
+            }
+        }
+    }
+
+    // Glisser deplace la selection, une entree d'annulation pour tout le geste.
+    if pointer.down && app.viewport.dragging() {
+        let delta = app.viewport.drag_to(world_at);
+        if delta != Vec2::ZERO && !app.viewport.selection().is_empty() {
+            let actors = app.viewport.selection().to_vec();
+            app.history
+                .push(Box::new(MoveActors::new(actors, delta)), &mut app.editing);
+        }
+    }
+
+    if pointer.released && app.viewport.dragging() {
+        app.viewport.end_drag();
+        // Le geste est fini : le suivant ne doit pas s'y coller.
+        app.history.break_merge();
+    }
+}
+
 fn draw_inspector(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter, area: Rect) {
     let theme = *app.ui.theme();
 
@@ -390,7 +488,7 @@ fn draw_inspector(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painte
         return;
     };
 
-    let Some(prop) = app.world.get::<Prop>(selected) else {
+    let Some(prop) = app.editing.world.get::<Prop>(selected) else {
         return;
     };
 
@@ -428,10 +526,10 @@ fn draw_inspector(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painte
                 )
                 .clicked
                 {
-                    let _ = app
-                        .world
-                        .get_mut::<Prop>(selected)
-                        .map(|p| inspector::set(p, row.field, Value::Bool(on)));
+                    app.history.push(
+                        Box::new(SetField::new(selected, row.field, Value::Bool(on))),
+                        &mut app.editing,
+                    );
                 }
             }
             Editor::Slider { min, max } => {
@@ -444,9 +542,15 @@ fn draw_inspector(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painte
                     field,
                     (*min, *max),
                     &mut value,
-                ) && let Some(p) = app.world.get_mut::<Prop>(selected)
-                {
-                    let _ = inspector::set(p, row.field, Value::Float(f64::from(value)));
+                ) {
+                    app.history.push(
+                        Box::new(SetField::new(
+                            selected,
+                            row.field,
+                            Value::Float(f64::from(value)),
+                        )),
+                        &mut app.editing,
+                    );
                 }
             }
             Editor::Vector2 => {
@@ -482,10 +586,15 @@ fn draw_inspector(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painte
                     1.0,
                 );
 
-                if (a || b)
-                    && let Some(p) = app.world.get_mut::<Prop>(selected)
-                {
-                    let _ = inspector::set(p, row.field, Value::Vec2(Vec2::new(x, y_value)));
+                if a || b {
+                    app.history.push(
+                        Box::new(SetField::new(
+                            selected,
+                            row.field,
+                            Value::Vec2(Vec2::new(x, y_value)),
+                        )),
+                        &mut app.editing,
+                    );
                 }
             }
             Editor::Text => {
@@ -531,6 +640,7 @@ fn draw_console(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter,
             app.history.depth(),
             if app.history.is_dirty() { " *" } else { "" }
         ),
+        app.status.clone(),
         "Echap pour quitter".to_owned(),
     ];
 
@@ -543,6 +653,24 @@ fn draw_console(app: &mut EditorApp, batch: &mut SpriteBatch, painter: &Painter,
             theme.muted,
         );
     }
+}
+
+/// Ecrit la scene sous forme de fichier, celui que le runtime sait charger.
+fn save_scene(app: &mut EditorApp) -> Result<std::path::PathBuf, String> {
+    let project = app.project.as_ref().ok_or("aucun projet ouvert")?;
+
+    let mut scene = raster_core::Scene::new("scene");
+    for (_, prop) in app.editing.world.iter::<Prop>() {
+        scene.add(prop);
+    }
+
+    let path = project.root().join("scene.scene.toml");
+    scene
+        .save(&path)
+        .map_err(|e| format!("l'enregistrement a echoue : {e}"))?;
+
+    app.history.mark_saved();
+    Ok(path)
 }
 
 fn as_f32(value: &Value) -> f32 {
