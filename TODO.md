@@ -445,8 +445,8 @@ first two.
 The flagship.
 
 - [ ] Manual pixel drawing — the full tool set
-- [ ] Layers with blend modes and opacity
-- [ ] Parametric generation via Rasterie
+- [x] Layers with blend modes and opacity
+- [x] Parametric generation via Rasterie
 - [ ] Live parameter tweaking
 - [ ] Pixel art rule checking as guidance, not enforcement
 - [ ] Onion skinning
