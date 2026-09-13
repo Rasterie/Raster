@@ -427,13 +427,14 @@ first two.
 
 ## M6.2 Rasterie port to Rust `[!]`
 
-- [~] Port `rasterie-engine` from TypeScript to Rust — colour and shapes done
+- [~] Port `rasterie-engine` from TypeScript to Rust — colour, shapes, rules,
+  dithering done; compose, style, export and Minecraft remain
 - [ ] Keep the web version working — this is a port, not a migration
 - [x] Colour: OKLCH, ramps, hue shifting
 - [x] Shape grammar — 7 silhouettes, 5 corners, 4 fills
-- [ ] Pixel art rules: cluster size, orphan pixels, canonical slopes
-- [ ] Dithering
-- [ ] Validation and audit
+- [x] Pixel art rules: cluster size, orphan pixels, canonical slopes
+- [x] Dithering — Bayer 2, Bayer 4, checker, all in 2x2 blocks
+- [x] Validation and audit
 - [x] Verify parity against the TypeScript output — colour and ramps
 - [ ] Verify parity for the rest, as each module is ported
 
