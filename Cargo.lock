@@ -1599,6 +1599,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "raster-ed-sprite"
+version = "0.0.0"
+dependencies = [
+ "raster-ed-visual",
+ "raster-editor",
+ "raster-math",
+ "raster-render",
+ "raster-ui",
+ "rasterie",
+]
+
+[[package]]
 name = "raster-ed-visual"
 version = "0.0.0"
 dependencies = [

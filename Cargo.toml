@@ -12,6 +12,7 @@ members = [
     "crates/raster-ui",
     "crates/raster-editor",
     "crates/editors/raster-ed-visual",
+    "crates/editors/raster-ed-sprite",
     "crates/rasterie",
     "games/keystone",
 ]
