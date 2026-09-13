@@ -444,15 +444,16 @@ first two.
 
 The flagship.
 
-- [ ] Manual pixel drawing — the full tool set
+- [x] Manual pixel drawing — the full tool set
 - [x] Layers with blend modes and opacity
 - [x] Parametric generation via Rasterie
 - [ ] Live parameter tweaking
 - [ ] Pixel art rule checking as guidance, not enforcement
-- [ ] Onion skinning
-- [ ] Symmetry modes
+- [x] Onion skinning
+- [x] Symmetry modes
 - [ ] Import a PNG, and be honest that it carries no parameters
-- [ ] Export PNG and spritesheet
+- [x] Spritesheet packing and unpacking
+- [ ] Export to PNG on disk
 
 ## M6.4 Palette editor
 
@@ -481,7 +482,7 @@ The flagship.
 
 - [ ] Frame timeline with drag-to-reorder
 - [ ] Per-frame duration
-- [ ] Onion skinning, shared with the sprite editor
+- [x] Onion skinning, shared with the sprite editor
 - [ ] Event markers on frames
 - [ ] State machine graph editor
 - [ ] Property curve editor
