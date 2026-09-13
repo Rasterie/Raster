@@ -427,8 +427,10 @@ first two.
 
 ## M6.2 Rasterie port to Rust `[!]`
 
-- [~] Port `rasterie-engine` from TypeScript to Rust — colour, shapes, rules,
-  dithering done; compose, style, export and Minecraft remain
+- [~] Port `rasterie-engine` from TypeScript to Rust — colour, shapes, rules
+  and dithering done; compose, style and export remain
+- [!] **Not ported:** the Minecraft texture module. Raster is a 2D engine, not
+  a texture tool for one game — that module belongs to the web app, not here.
 - [ ] Keep the web version working — this is a port, not a migration
 - [x] Colour: OKLCH, ramps, hue shifting
 - [x] Shape grammar — 7 silhouettes, 5 corners, 4 fills
