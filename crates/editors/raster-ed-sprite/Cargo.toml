@@ -1,0 +1,17 @@
+[package]
+name = "raster-ed-sprite"
+version = "0.0.0"
+description = "The sprite editor: manual pixel drawing and parametric generation."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+raster-math = { path = "../../raster-math" }
+raster-render = { path = "../../raster-render" }
+raster-ui = { path = "../../raster-ui" }
+raster-editor = { path = "../../raster-editor" }
+raster-ed-visual = { path = "../raster-ed-visual" }
+rasterie = { path = "../../rasterie" }
