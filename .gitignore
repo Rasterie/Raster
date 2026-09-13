@@ -6,4 +6,8 @@
 .idea/
 .vscode/
 
+# Godot laisse des fichiers d'import a cote des assets qu'il ouvre.
+*.import
+.godot/
+
 CLAUDE.md
